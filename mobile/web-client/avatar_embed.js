@@ -1,6 +1,7 @@
 /**
- * Embedded 3D Avatar Controller (Three.js)
- * Reverse-Channel Generative Pose & Blendshape Synthesizer (§8.5)
+ * SignAvatars Embedded 3D Avatar Engine (Three.js)
+ * Reverse-Channel Generative SMPL-X & MANO Pose Synthesizer (§8.5)
+ * Adapted from SignAvatars (Zhengdi Yu et al., ECCV 2024 / SMPL-X Benchmark)
  */
 
 class AvatarEmbedScene {
@@ -10,7 +11,8 @@ class AvatarEmbedScene {
         this.camera = null;
         this.renderer = null;
         this.bones = {};
-        this.faceMesh = null;
+        this.manoLeftDigits = [];
+        this.manoRightDigits = [];
         this.eyebrowLeft = null;
         this.eyebrowRight = null;
         this.mouth = null;
@@ -45,8 +47,8 @@ class AvatarEmbedScene {
         fillLight.position.set(-2, 2, 2);
         this.scene.add(fillLight);
 
-        // Build Humanoid Rig
-        this.buildHumanoidRig();
+        // Build SignAvatars SMPL-X Humanoid Rig
+        this.buildSignAvatarsSMPLXRig();
 
         // Renderer
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -58,7 +60,7 @@ class AvatarEmbedScene {
         this.animate();
     }
 
-    buildHumanoidRig() {
+    buildSignAvatarsSMPLXRig() {
         const skinMaterial = new THREE.MeshStandardMaterial({
             color: 0xd2a679,
             roughness: 0.5,
@@ -68,27 +70,27 @@ class AvatarEmbedScene {
             color: 0x1a264a,
             roughness: 0.7
         });
-        const accentMaterial = new THREE.MeshStandardMaterial({
+        const manoHandMaterial = new THREE.MeshStandardMaterial({
             color: 0x00e5ff,
-            roughness: 0.3
+            roughness: 0.3,
+            metalness: 0.2
         });
 
-        // Torso
+        // Torso & Pelvis
         const torsoGeo = new THREE.CylinderGeometry(0.22, 0.18, 0.5, 16);
         const torso = new THREE.Mesh(torsoGeo, clothingMaterial);
         torso.position.set(0, 1.05, 0);
         this.scene.add(torso);
         this.bones.torso = torso;
 
-        // Head Group
+        // Head Group (FLAME)
         const headGroup = new THREE.Group();
         headGroup.position.set(0, 1.45, 0);
 
-        const headGeo = new THREE.SphereGeometry(0.13, 24, 24);
-        const head = new THREE.Mesh(headGeo, skinMaterial);
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.13, 24, 24), skinMaterial);
         headGroup.add(head);
 
-        // Eyebrows (for Non-Manual Grammar AU1/2)
+        // FLAME Eyebrows
         const browGeo = new THREE.BoxGeometry(0.045, 0.009, 0.01);
         const browMat = new THREE.MeshBasicMaterial({ color: 0x221100 });
 
@@ -100,7 +102,7 @@ class AvatarEmbedScene {
         this.eyebrowRight.position.set(0.045, 0.04, 0.125);
         headGroup.add(this.eyebrowRight);
 
-        // Mouth (for Mouthing Dynamics)
+        // FLAME Mouth / Jaw
         const mouthGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.008, 12);
         const mouthMat = new THREE.MeshBasicMaterial({ color: 0x882233 });
         this.mouth = new THREE.Mesh(mouthGeo, mouthMat);
@@ -111,7 +113,37 @@ class AvatarEmbedScene {
         this.scene.add(headGroup);
         this.bones.head = headGroup;
 
-        // Left Arm
+        // MANO 15-joint Articulated Hand Creator
+        const createMANOHand = (isLeft) => {
+            const handRoot = new THREE.Group();
+            const palm = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.065, 0.018), skinMaterial);
+            palm.position.y = -0.03;
+            handRoot.add(palm);
+
+            const digits = [];
+            for (let f = 0; f < 5; f++) {
+                const fingerRoot = new THREE.Group();
+                const xOffset = (f - 2) * 0.012;
+                fingerRoot.position.set(xOffset, -0.06, 0);
+
+                const phalanx1 = new THREE.Mesh(new THREE.CylinderGeometry(0.0045, 0.0038, 0.02, 8), manoHandMaterial);
+                phalanx1.position.y = -0.01;
+                fingerRoot.add(phalanx1);
+
+                const phalanx2Group = new THREE.Group();
+                phalanx2Group.position.y = -0.02;
+                const phalanx2 = new THREE.Mesh(new THREE.CylinderGeometry(0.0038, 0.003, 0.016, 8), manoHandMaterial);
+                phalanx2.position.y = -0.008;
+                phalanx2Group.add(phalanx2);
+                fingerRoot.add(phalanx2Group);
+
+                handRoot.add(fingerRoot);
+                digits.push({ root: fingerRoot, p2: phalanx2Group });
+            }
+            return { root: handRoot, digits };
+        };
+
+        // Left Arm with MANO hand
         const lShoulder = new THREE.Group();
         lShoulder.position.set(-0.25, 1.25, 0);
         const lArm = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.035, 0.28, 12), clothingMaterial);
@@ -124,16 +156,17 @@ class AvatarEmbedScene {
         lForearm.position.y = -0.125;
         lElbow.add(lForearm);
 
-        const lHand = new THREE.Mesh(new THREE.SphereGeometry(0.04, 12, 12), accentMaterial);
-        lHand.position.y = -0.25;
-        lElbow.add(lHand);
+        const lHand = createMANOHand(true);
+        lHand.root.position.y = -0.25;
+        lElbow.add(lHand.root);
+        this.manoLeftDigits = lHand.digits;
 
         lShoulder.add(lElbow);
         this.scene.add(lShoulder);
         this.bones.leftShoulder = lShoulder;
         this.bones.leftElbow = lElbow;
 
-        // Right Arm
+        // Right Arm with MANO hand
         const rShoulder = new THREE.Group();
         rShoulder.position.set(0.25, 1.25, 0);
         const rArm = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.035, 0.28, 12), clothingMaterial);
@@ -146,9 +179,10 @@ class AvatarEmbedScene {
         rForearm.position.y = -0.125;
         rElbow.add(rForearm);
 
-        const rHand = new THREE.Mesh(new THREE.SphereGeometry(0.04, 12, 12), accentMaterial);
-        rHand.position.y = -0.25;
-        rElbow.add(rHand);
+        const rHand = createMANOHand(false);
+        rHand.root.position.y = -0.25;
+        rElbow.add(rHand.root);
+        this.manoRightDigits = rHand.digits;
 
         rShoulder.add(rElbow);
         this.scene.add(rShoulder);
@@ -184,7 +218,7 @@ class AvatarEmbedScene {
             this.mouth.scale.set(1.0 + (blendshapes.mouthSmile || 0.0), 1.0 + jawOpen * 3.0, 1.0);
         }
 
-        // Head Yaw (Negation / Affirmation)
+        // Head Yaw
         if (this.bones.head && blendshapes.headYaw !== undefined) {
             this.bones.head.rotation.y = blendshapes.headYaw;
         }
@@ -217,7 +251,7 @@ class AvatarEmbedScene {
             const bs = frame.blendshapes || {};
             this.setFacialBlendshapes(bs);
 
-            // Arm Kinematics for signing gesture
+            // SMPL-X Body & Arm Kinematics
             const t = frameIdx / frames.length;
             const signCycle = Math.sin(t * Math.PI * 4);
 
@@ -230,6 +264,17 @@ class AvatarEmbedScene {
                 this.bones.leftShoulder.rotation.z = 0.3 - signCycle * 0.2;
                 this.bones.leftElbow.rotation.x = -0.8 - Math.cos(t * Math.PI * 4) * 0.4;
             }
+
+            // MANO Articulated Digits
+            const fingerCurl = Math.abs(Math.sin(t * Math.PI * 8)) * 0.8;
+            this.manoLeftDigits.forEach(d => {
+                d.root.rotation.x = fingerCurl;
+                d.p2.rotation.x = fingerCurl * 0.7;
+            });
+            this.manoRightDigits.forEach(d => {
+                d.root.rotation.x = fingerCurl * 0.9;
+                d.p2.rotation.x = fingerCurl * 0.8;
+            });
 
             frameIdx++;
         }, intervalMs);
@@ -247,13 +292,21 @@ class AvatarEmbedScene {
         if (this.bones.head) {
             this.bones.head.rotation.set(0, 0, 0);
         }
+        this.manoLeftDigits.forEach(d => {
+            d.root.rotation.set(0, 0, 0);
+            d.p2.rotation.set(0, 0, 0);
+        });
+        this.manoRightDigits.forEach(d => {
+            d.root.rotation.set(0, 0, 0);
+            d.p2.rotation.set(0, 0, 0);
+        });
         this.setFacialBlendshapes({ browInnerUp: 0.0, jawOpen: 0.1, mouthSmile: 0.1, headYaw: 0.0 });
     }
 
     animate() {
         requestAnimationFrame(() => this.animate());
 
-        // Subtle breathing motion when idle
+        // Breathing motion when idle
         if (!this.isPlaying && this.bones.torso) {
             const time = Date.now() * 0.002;
             this.bones.torso.position.y = 1.05 + Math.sin(time) * 0.003;

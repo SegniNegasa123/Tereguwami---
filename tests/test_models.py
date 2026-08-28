@@ -79,6 +79,15 @@ def test_avatar_production():
     assert len(res["frames"]) == res["total_frames"]
     assert "browInnerUp" in res["frames"][0]["blendshapes"]
     assert "mouthSmile" in res["frames"][0]["blendshapes"]
+    # SignAvatars SMPL-X parameter verification
+    assert "smplx" in res["frames"][0]
+    smplx = res["frames"][0]["smplx"]
+    assert len(smplx["body_pose"]) == 63
+    assert len(smplx["left_hand_pose"]) == 45
+    assert len(smplx["right_hand_pose"]) == 45
+    assert len(smplx["expression"]) == 50
+    assert len(smplx["root_orient"]) == 3
+
 
 
 def test_few_shot_personalization():

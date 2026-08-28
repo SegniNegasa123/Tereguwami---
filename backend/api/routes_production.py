@@ -36,7 +36,8 @@ async def produce_avatar_animation(
             timestamp_ms=f["timestamp_ms"],
             left_hand=f["left_hand"],
             right_hand=f["right_hand"],
-            blendshapes=f["blendshapes"]
+            blendshapes=f["blendshapes"],
+            smplx=f.get("smplx")
         )
         for f in result["frames"]
     ]
@@ -49,5 +50,7 @@ async def produce_avatar_animation(
         duration_seconds=result["duration_seconds"],
         is_question=result["is_question"],
         is_negation=result["is_negation"],
+        model_architecture=result.get("model_architecture", "SignAvatars_SMPLX_Holistic"),
         frames=frames
     )
+

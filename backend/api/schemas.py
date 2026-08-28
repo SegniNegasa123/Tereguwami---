@@ -57,6 +57,7 @@ class AvatarFrameData(BaseModel):
     left_hand: Dict[str, Any]
     right_hand: Dict[str, Any]
     blendshapes: Dict[str, float]
+    smplx: Optional[Dict[str, Any]] = None
 
 
 class AvatarProductionResponse(BaseModel):
@@ -67,7 +68,9 @@ class AvatarProductionResponse(BaseModel):
     duration_seconds: float
     is_question: bool
     is_negation: bool
+    model_architecture: Optional[str] = "SignAvatars_SMPLX_Holistic"
     frames: List[AvatarFrameData]
+
 
 
 # ==========================================
