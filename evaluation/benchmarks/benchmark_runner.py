@@ -93,6 +93,9 @@ def run_full_benchmark_suite() -> Dict[str, Any]:
     return report
 
 
+run_all_benchmarks = run_full_benchmark_suite
+
+
 if __name__ == "__main__":
     report = run_full_benchmark_suite()
     print("Benchmark evaluation completed successfully.")

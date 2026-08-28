@@ -1,0 +1,12 @@
+<resources>
+    <color name="primary">#00E5FF</color>
+    <color name="primary_variant">#00B0FF</color>
+    <color name="secondary">#00E676</color>
+    <color name="secondary_variant">#00C853</color>
+    <color name="background">#0B0F19</color>
+    <color name="surface">#111827</color>
+    <color name="surface_raised">#1F2937</color>
+    <color name="eth_green">#009B48</color>
+    <color name="eth_yellow">#FED100</color>
+    <color name="eth_red">#E03C31</color>
+</resources>

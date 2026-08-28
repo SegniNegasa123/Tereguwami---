@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">ተርጓሚ — Tereguwami</string>
+    <string name="app_description">Two-Way Continuous Ethiopian Sign Language AI Platform</string>
+    <string name="camera_permission_required">Camera access is required for real-time sign language recognition.</string>
+    <string name="audio_permission_required">Microphone access is required for spoken dialogue input.</string>
+</resources>
