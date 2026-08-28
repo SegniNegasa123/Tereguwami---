@@ -127,3 +127,78 @@ def test_governance_endpoints():
     assert v_resp.status_code == 200
     assert v_resp.json()["consent_active"] is False
 
+
+def test_auth_endpoints():
+    import uuid
+    uid = uuid.uuid4().hex[:6]
+    test_user = f"user_{uid}"
+    test_email = f"{test_user}@tereguwami.org"
+    test_pw = "SecureSignerPassword123!"
+
+    # 1. Register user
+    reg_resp = client.post("/api/v1/auth/register", json={
+        "username": test_user,
+        "email": test_email,
+        "password": test_pw,
+        "role": "registered_signer",
+        "preferred_language": "am"
+    })
+    assert reg_resp.status_code == 201
+    reg_data = reg_resp.json()
+    assert "access_token" in reg_data
+    assert reg_data["username"] == test_user
+    token = reg_data["access_token"]
+
+    # 2. Login user
+    login_resp = client.post("/api/v1/auth/login", json={
+        "username_or_email": test_user,
+        "password": test_pw
+    })
+    assert login_resp.status_code == 200
+    login_data = login_resp.json()
+    assert login_data["access_token"] is not None
+
+    # 3. Inspect profile with Bearer auth
+    me_resp = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
+    assert me_resp.status_code == 200
+    assert me_resp.json()["username"] == test_user
+
+
+def test_leaderboard_endpoints():
+    # 1. Fetch public leaderboard
+    list_resp = client.get("/api/v1/leaderboard")
+    assert list_resp.status_code == 200
+    records = list_resp.json()
+    assert len(records) >= 3
+    assert records[0]["rank"] == 1
+
+    # 2. Submit new evaluation
+    sub_payload = {
+        "model_name": "Test Continuous Graph Transformer",
+        "organization": "Test Research Lab",
+        "contact_email": "test@lab.edu.et",
+        "signer_independent_acc": 89.5,
+        "signer_dependent_acc": 97.1,
+        "bleu_4": 33.2,
+        "non_manual_f1": 88.0
+    }
+    sub_resp = client.post("/api/v1/leaderboard/submit", json=sub_payload)
+    assert sub_resp.status_code == 200
+    assert sub_resp.json()["model_name"] == sub_payload["model_name"]
+
+
+def test_frame_translation_endpoint():
+    frame_payload = {
+        "image_base64": None,
+        "target_language": "am",
+        "domain_hint": "healthcare",
+        "high_stakes_verification": False
+    }
+    resp = client.post("/api/v1/translate/frame", json=frame_payload)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "translated_text" in data
+    assert data["target_language"] == "am"
+    assert data["confidence_score"] > 0.0
+
+

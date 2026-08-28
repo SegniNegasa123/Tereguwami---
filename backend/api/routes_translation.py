@@ -5,7 +5,10 @@ Part of Tereguwami (ተርጓሚ) API Gateway
 
 from fastapi import APIRouter, HTTPException, Depends
 import numpy as np
-from backend.api.schemas import TranslationRequest, TranslationResponse
+from backend.api.schemas import (
+    TranslationRequest, TranslationResponse,
+    DirectFrameTranslationRequest
+)
 from backend.auth.rbac import get_current_user
 from models.translation.gloss_free_transformer import continuous_translator
 from models.translation.constrained_decoder import constrained_decoder
@@ -100,7 +103,9 @@ async def translate_single_frame(
 
     # Extract 543 landmarks from frame
     raw_landmarks = mediapipe_extractor.process_frame(img_rgb)
-    norm_landmarks = keypoint_normalizer.normalize_frame(raw_landmarks)
+    norm_landmarks = keypoint_normalizer.normalize_spatial(raw_landmarks)
+    if len(norm_landmarks.shape) == 3:
+        norm_landmarks = norm_landmarks[0]
 
     # Build sequence window (T=20 frames) for continuous translator
     seq_frames = []

@@ -56,6 +56,13 @@
             <button class="nav-btn" data-tab="personalization" id="btn-tab-personalize">Custom Signs</button>
             <button class="nav-btn" data-tab="silent-speech" id="btn-tab-silent">Silent Speech</button>
             <button class="nav-btn" data-tab="governance" id="btn-tab-governance">Governance</button>
+            <button class="nav-btn" data-tab="leaderboard" id="btn-tab-leaderboard">Leaderboard</button>
+
+            <!-- User Auth Profile Badge -->
+            <div class="user-profile-badge" id="user-badge" title="Signer Account Profile">
+                <span class="user-avatar-icon">👤</span>
+                <span id="user-display-name">Guest Signer</span>
+            </div>
         </div>
     </header>
 
@@ -77,6 +84,7 @@
                         <div class="pane-actions">
                             <button id="btn-toggle-camera" class="action-btn">Start Camera</button>
                             <button id="btn-sim-sign" class="action-btn secondary">Simulate Sign</button>
+                            <button id="btn-snap-frame" class="action-btn tertiary" title="Capture single frame landmark extraction">📷 Snap Frame</button>
                         </div>
                     </div>
 
@@ -309,7 +317,128 @@
                 </div>
             </div>
         </section>
+
+        <!-- TAB 5: Public Benchmark Leaderboard & SOTA Tracker -->
+        <section id="tab-leaderboard" class="tab-pane">
+            <div class="feature-pane-wrapper">
+                <div class="feature-intro">
+                    <h2>Ethiopian Sign Language Public Benchmark Leaderboard (§10, §15)</h2>
+                    <p>Standardized evaluation rankings across 60–100 signer-independent continuous test splits. Tracking Word Error Rate, BLEU-4 translation fluency, and non-manual marker F1.</p>
+                </div>
+                <div class="leaderboard-grid">
+                    <div class="leaderboard-table-card">
+                        <div class="card-header-flex">
+                            <h3>Verified SOTA Model Rankings</h3>
+                            <button id="btn-refresh-leaderboard" class="action-btn small">🔄 Refresh</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="leaderboard-table" id="leaderboard-table">
+                                <thead>
+                                    <tr>
+                                        <th>Rank</th>
+                                        <th>Model Architecture</th>
+                                        <th>Organization</th>
+                                        <th>Signer-Indep. Acc</th>
+                                        <th>Signer-Dep. Acc</th>
+                                        <th>Gen. Gap</th>
+                                        <th>BLEU-4</th>
+                                        <th>Non-Manual F1</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="leaderboard-body">
+                                    <!-- Dynamic leaderboard rows injected here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="leaderboard-submit-card">
+                        <h3>Submit Model Evaluation</h3>
+                        <form id="leaderboard-form">
+                            <label for="sub-model-name">Model Name</label>
+                            <input type="text" id="sub-model-name" placeholder="e.g. Hierarchical Graph Transformer" required>
+
+                            <label for="sub-org">Organization / Institution</label>
+                            <input type="text" id="sub-org" placeholder="e.g. Addis Ababa University / AI Lab" required>
+
+                            <label for="sub-email">Contact Email</label>
+                            <input type="email" id="sub-email" placeholder="researcher@institution.edu.et" required>
+
+                            <div class="form-row-2">
+                                <div>
+                                    <label for="sub-indep-acc">Signer-Indep. Acc (%)</label>
+                                    <input type="number" step="0.1" id="sub-indep-acc" placeholder="85.5" required>
+                                </div>
+                                <div>
+                                    <label for="sub-dep-acc">Signer-Dep. Acc (%)</label>
+                                    <input type="number" step="0.1" id="sub-dep-acc" placeholder="94.2" required>
+                                </div>
+                            </div>
+
+                            <div class="form-row-2">
+                                <div>
+                                    <label for="sub-bleu">BLEU-4 Score</label>
+                                    <input type="number" step="0.1" id="sub-bleu" placeholder="28.4" required>
+                                </div>
+                                <div>
+                                    <label for="sub-f1">Non-Manual F1 (%)</label>
+                                    <input type="number" step="0.1" id="sub-f1" placeholder="82.0" required>
+                                </div>
+                            </div>
+
+                            <button type="submit" id="btn-submit-benchmark" class="action-btn primary full-width">Submit to Public Leaderboard</button>
+                        </form>
+                        <div id="sub-status" class="status-msg"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
     </main>
+
+    <!-- Signer Account & Authentication Modal -->
+    <div class="modal-backdrop hidden" id="auth-modal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="auth-modal-title">Sign In / Register Profile</h3>
+                <button class="modal-close-btn" id="btn-close-auth">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="auth-toggle-tabs">
+                    <button class="auth-tab-btn active" id="tab-auth-login">Sign In</button>
+                    <button class="auth-tab-btn" id="tab-auth-register">Create Account</button>
+                </div>
+                
+                <!-- Login Form -->
+                <form id="form-auth-login">
+                    <label for="login-username">Username or Email</label>
+                    <input type="text" id="login-username" value="signer_demo" required>
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" value="SignerPass123!" required>
+                    <button type="submit" class="action-btn primary full-width" style="margin-top: 1rem;">Sign In</button>
+                </form>
+
+                <!-- Register Form -->
+                <form id="form-auth-register" class="hidden">
+                    <label for="reg-username">Username</label>
+                    <input type="text" id="reg-username" placeholder="e.g. abebe_signer" required>
+                    <label for="reg-email">Email</label>
+                    <input type="email" id="reg-email" placeholder="signer@tereguwami.org" required>
+                    <label for="reg-password">Password</label>
+                    <input type="password" id="reg-password" placeholder="Minimum 6 characters" required>
+                    <label for="reg-role">Role</label>
+                    <select id="reg-role">
+                        <option value="registered_signer" selected>Deaf Signer / Community Member</option>
+                        <option value="researcher">Academic Researcher / NLP Lab</option>
+                        <option value="deaf_advisory_board">Deaf Advisory Board Representative</option>
+                        <option value="institutional_client">Healthcare / Court Staff</option>
+                    </select>
+                    <button type="submit" class="action-btn primary full-width" style="margin-top: 1rem;">Create Account</button>
+                </form>
+
+                <div id="auth-status" class="status-msg"></div>
+            </div>
+        </div>
+    </div>
 
     <!-- Shared SDK & Application Logic Scripts -->
     <script src="../shared-components/tereguwami_sdk.js"></script>

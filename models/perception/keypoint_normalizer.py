@@ -68,6 +68,8 @@ class KeypointNormalizer:
 
         return normalized if is_batched else normalized[0]
 
+    normalize_frame = normalize_spatial
+
     def interpolate_dropped_frames(self, sequence: np.ndarray) -> np.ndarray:
         """
         Linearly interpolate missing or zero-dropped frames across the temporal dimension.
