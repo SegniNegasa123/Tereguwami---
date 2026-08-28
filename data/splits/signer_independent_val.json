@@ -1,0 +1,12 @@
+{
+  "split_name": "signer_independent_val",
+  "protocol": "Signer-Independent Validation",
+  "total_signers": 15,
+  "signers": [
+    "SIGNER_61", "SIGNER_62", "SIGNER_63", "SIGNER_64", "SIGNER_65",
+    "SIGNER_66", "SIGNER_67", "SIGNER_68", "SIGNER_69", "SIGNER_70",
+    "SIGNER_71", "SIGNER_72", "SIGNER_73", "SIGNER_74", "SIGNER_75"
+  ],
+  "target_utterances": 900,
+  "domains": ["healthcare", "legal_court", "education", "everyday_civic"]
+}

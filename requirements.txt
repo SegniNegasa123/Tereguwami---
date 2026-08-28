@@ -1,0 +1,42 @@
+# Tereguwami (ተርጓሚ) Python Dependencies
+# Core Web and API
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+pydantic>=2.8.0
+starlette>=0.38.0
+httpx>=0.27.0
+python-multipart>=0.0.9
+requests>=2.32.0
+
+# Scientific Computing & Machine Learning
+numpy>=1.26.0
+scipy>=1.12.0
+scikit-learn>=1.5.0
+pandas>=2.2.0
+
+# Computer Vision & Landmark Extraction
+# mediapipe>=0.10.14
+# opencv-python>=4.10.0
+
+# Deep Learning Frameworks
+# torch>=2.3.0
+# torchvision>=0.18.0
+# transformers>=4.42.0
+# datasets>=2.20.0
+# tokenizers>=0.19.0
+
+# Asynchronous Database & Relational Storage
+sqlalchemy>=2.0.0
+aiosqlite>=0.20.0
+
+# Real-Time Streaming & WebSocket
+websockets>=12.0
+
+# Security & Authentication
+pyjwt>=2.8.0
+passlib[bcrypt]>=1.7.4
+python-jose[cryptography]>=3.3.0
+
+# Testing & Quality Assurance
+pytest>=8.0.0
+pytest-asyncio>=0.23.0

@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="am">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ተርጓሚ — Tereguwami | Two-Way Ethiopian Sign Language AI Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+Ethiopic:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <!-- Three.js CDN for embedded generative avatar -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <header class="app-header">
+        <div class="brand">
+            <div class="brand-badge">
+                <span class="eth-flag-accent"></span>
+                <span class="brand-name">ተርጓሚ</span>
+            </div>
+            <span class="brand-sub">Tereguwami AI</span>
+            <span class="live-pill" id="connection-status">● 9 Layers Active</span>
+        </div>
+
+        <div class="header-controls">
+            <!-- Language Selector -->
+            <div class="control-item">
+                <label for="lang-select">Target Language</label>
+                <select id="lang-select">
+                    <option value="am" selected>አማርኛ (Amharic)</option>
+                    <option value="om">Afaan Oromoo (Oromo)</option>
+                    <option value="en">English (UK/US)</option>
+                </select>
+            </div>
+
+            <!-- Domain Mode -->
+            <div class="control-item">
+                <label for="domain-select">Domain</label>
+                <select id="domain-select">
+                    <option value="healthcare" selected>Healthcare / ሕክምና</option>
+                    <option value="legal">Legal & Court / ፍርድ ቤት</option>
+                    <option value="education">Education / ትምህርት</option>
+                    <option value="civic_banking">Banking / ባንክ</option>
+                </select>
+            </div>
+
+            <!-- High-Stakes Guardrail Toggle -->
+            <div class="control-item toggle-item">
+                <label for="toggle-high-stakes" title="Enforces strict grounding and human verification for medical/court sessions">Clinical / Legal Guard</label>
+                <input type="checkbox" id="toggle-high-stakes">
+            </div>
+
+            <!-- Tab Buttons -->
+            <button class="nav-btn active" data-tab="duplex-chat" id="btn-tab-chat">Conversation</button>
+            <button class="nav-btn" data-tab="personalization" id="btn-tab-personalize">Custom Signs</button>
+            <button class="nav-btn" data-tab="silent-speech" id="btn-tab-silent">Silent Speech</button>
+            <button class="nav-btn" data-tab="governance" id="btn-tab-governance">Governance</button>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="app-main">
+        <!-- TAB 1: Full-Duplex Two-Way Conversation -->
+        <section id="tab-duplex-chat" class="tab-pane active">
+            <div class="duplex-layout">
+                <!-- PANE 1: Deaf Signer Camera & Continuous Translation -->
+                <div class="duplex-pane signer-pane">
+                    <div class="pane-header">
+                        <div class="pane-title">
+                            <span class="role-icon">✋</span>
+                            <div>
+                                <h2>Deaf Signer Input</h2>
+                                <p>Live MediaPipe 543 3D Landmark & Non-Manual Marker Tracking</p>
+                            </div>
+                        </div>
+                        <div class="pane-actions">
+                            <button id="btn-toggle-camera" class="action-btn">Start Camera</button>
+                            <button id="btn-sim-sign" class="action-btn secondary">Simulate Sign</button>
+                        </div>
+                    </div>
+
+                    <!-- Video & Canvas Viewport -->
+                    <div class="camera-viewport-container">
+                        <video id="camera-feed" autoplay playsinline muted></video>
+                        <canvas id="landmark-canvas"></canvas>
+                        
+                        <div class="camera-overlay-badge" id="camera-badge">
+                            <span class="tracking-dot"></span> 3D Pose + Hands + Face Mesh Active
+                        </div>
+
+                        <!-- Real-time Action Unit HUD -->
+                        <div class="au-hud">
+                            <div class="au-item">
+                                <span class="au-label">Eyebrows (AU1/2)</span>
+                                <div class="au-bar"><div id="au-bar-eyebrow" class="au-fill" style="width: 25%"></div></div>
+                            </div>
+                            <div class="au-item">
+                                <span class="au-label">Mouth Open</span>
+                                <div class="au-bar"><div id="au-bar-mouth" class="au-fill" style="width: 15%"></div></div>
+                            </div>
+                            <div class="au-item">
+                                <span class="au-label">Head Tilt</span>
+                                <span id="au-val-head" class="au-num">0.0°</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Translation Output Card -->
+                    <div class="translation-output-card">
+                        <div class="translation-meta">
+                            <span class="output-lang-tag" id="current-lang-tag">Amharic (አማርኛ)</span>
+                            <div class="confidence-badge" id="confidence-badge">Confidence: 96.4%</div>
+                            <span class="latency-tag">Latency: ~205ms</span>
+                        </div>
+
+                        <div class="translation-text-box">
+                            <p id="live-translated-text" class="translated-text">ዶክተር ላለፉት ሦስት ቀናት ብርቱ የራስ ምታት አለኝ።</p>
+                            <p id="sub-translated-text" class="sub-translated-text">Doctor, I have had a severe headache for the past three days.</p>
+                        </div>
+
+                        <div class="output-actions">
+                            <button id="btn-vocalize" class="speak-btn">🔊 Read Aloud to Hearing Interlocutor</button>
+                            <span id="clarification-alert" class="clarification-pill hidden">⚠️ Low Confidence: Requesting Signer Clarification</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PANE 2: Hearing Interlocutor & 3D Reverse Channel Avatar -->
+                <div class="duplex-pane avatar-pane">
+                    <div class="pane-header">
+                        <div class="pane-title">
+                            <span class="role-icon">👤</span>
+                            <div>
+                                <h2>Hearing Interlocutor & 3D Avatar</h2>
+                                <p>Spoken/Typed Words Synthesized into Continuous ESL Signs</p>
+                            </div>
+                        </div>
+                        <div class="pane-actions">
+                            <select id="avatar-speed-select">
+                                <option value="0.75">0.75x (Learner)</option>
+                                <option value="1.0" selected>1.0x (Normal)</option>
+                                <option value="1.25">1.25x (Fluent)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 3D WebGL Avatar Viewport -->
+                    <div class="avatar-viewport-container" id="avatar-canvas-container">
+                        <!-- Three.js canvas mounts here -->
+                        <div class="avatar-hud">
+                            <span class="avatar-status-tag" id="avatar-status-tag">Ready for Input</span>
+                            <span class="avatar-model-tag">Progressive Transformer Engine</span>
+                        </div>
+                    </div>
+
+                    <!-- Hearing User Input Box -->
+                    <div class="hearing-input-card">
+                        <div class="hearing-input-row">
+                            <button id="btn-mic-input" class="mic-btn" title="Speak through microphone">🎤</button>
+                            <input type="text" id="hearing-text-input" placeholder="Type response in Amharic, Afaan Oromo, or English..." value="መድኃኒቱን ከምግብ በኋላ ይውሰዱ።">
+                            <button id="btn-send-to-avatar" class="send-btn">Sign ➔</button>
+                        </div>
+                        <div class="preset-chips">
+                            <span class="chip-label">Quick Replies:</span>
+                            <button class="reply-chip" data-text="ጤና ይስጥልኝ እንደምን ነዎት?">ሰላምታ</button>
+                            <button class="reply-chip" data-text="መድኃኒቱን ከምግብ በኋላ ይውሰዱ።">መድኃኒት አወሳሰድ</button>
+                            <button class="reply-chip" data-text="እባክዎን በድጋሚ ያብራሩልኝ?">ማብራሪያ መጠየቅ</button>
+                            <button class="reply-chip" data-text="ክሱ ውድቅ ተደርጓል።">የፍርድ ውሳኔ</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Shared Conversation Transcript Strip -->
+            <div class="conversation-transcript-strip">
+                <div class="transcript-title">Real-Time Dialogue History</div>
+                <div class="messages-container" id="messages-container">
+                    <div class="msg-bubble signer">
+                        <span class="msg-sender">Signer (ESL ➔ አማርኛ):</span>
+                        <span class="msg-body">ዶክተር ላለፉት ሦስት ቀናት ብርቱ የራስ ምታት አለኝ።</span>
+                        <span class="msg-time">14:20:12</span>
+                    </div>
+                    <div class="msg-bubble hearing">
+                        <span class="msg-sender">Doctor (Hearing):</span>
+                        <span class="msg-body">መድኃኒቱን ከምግብ በኋላ ይውሰዱ። (Avatar Signed)</span>
+                        <span class="msg-time">14:20:25</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: Few-Shot Personalization Studio -->
+        <section id="tab-personalization" class="tab-pane">
+            <div class="feature-pane-wrapper">
+                <div class="feature-intro">
+                    <h2>Personal Sign Enrollment Studio (§8.6)</h2>
+                    <p>Teach Tereguwami unique family signs, dialectal variations, or regional names in 1–5 quick camera demonstrations. Embeddings are stored privately on-device in a 128-dimensional metric space.</p>
+                </div>
+                <div class="personalization-grid">
+                    <div class="enroll-form-card">
+                        <h3>Enroll New Personal Sign</h3>
+                        <label for="enroll-sign-name">Sign Name / Concept Label</label>
+                        <input type="text" id="enroll-sign-name" placeholder="e.g. FAMILY_NICKNAME_ABEBE" value="FAMILY_NICKNAME_ABEBE">
+
+                        <div class="enroll-steps">
+                            <div class="step-box">
+                                <span class="step-num">1</span>
+                                <p>Position yourself in camera frame and click "Record Exemplar 1".</p>
+                            </div>
+                            <div class="step-box">
+                                <span class="step-num">2</span>
+                                <p>Repeat sign 1–3 times for robust metric clustering.</p>
+                            </div>
+                            <div class="step-box">
+                                <span class="step-num">3</span>
+                                <p>Embeddings are normalized and added to your private profile.</p>
+                            </div>
+                        </div>
+
+                        <div class="enroll-actions">
+                            <button id="btn-record-exemplar" class="action-btn">Capture Exemplar (Simulate 3-Shot)</button>
+                            <button id="btn-save-enrollment" class="action-btn primary">Save to Profile</button>
+                        </div>
+                        <div id="enroll-status" class="status-msg"></div>
+                    </div>
+
+                    <div class="enrolled-catalog-card">
+                        <h3>Enrolled Custom Signs (<span id="enrolled-count">3</span>)</h3>
+                        <div class="enrolled-list" id="enrolled-list">
+                            <div class="enrolled-item">
+                                <div class="item-info">
+                                    <strong>FAMILY_SIGN_HOME</strong>
+                                    <span>3 shots enrolled • Intra-cluster variance: 0.04</span>
+                                </div>
+                                <span class="badge-enrolled">Active</span>
+                            </div>
+                            <div class="enrolled-item">
+                                <div class="item-info">
+                                    <strong>REGIONAL_COFFEE_CEREMONY</strong>
+                                    <span>2 shots enrolled • Intra-cluster variance: 0.06</span>
+                                </div>
+                                <span class="badge-enrolled">Active</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: Silent-Speech Neuromotor Monitor -->
+        <section id="tab-silent-speech" class="tab-pane">
+            <div class="feature-pane-wrapper">
+                <div class="feature-intro">
+                    <h2>Silent-Speech Subvocalization & Companion Band (§8.7, §8.8)</h2>
+                    <p>Decodes non-invasive jaw/face sEMG neuromuscular signals for silent or camera-free communication in low-light and private settings (AlterEgo lineage).</p>
+                </div>
+                <div class="silent-speech-grid">
+                    <div class="emg-monitor-card">
+                        <h3>6-Channel sEMG Live Signal Stream</h3>
+                        <canvas id="emg-canvas" width="600" height="240"></canvas>
+                        <div class="emg-controls">
+                            <button id="btn-sim-emg" class="action-btn">Simulate Subvocalization Burst</button>
+                            <span id="emg-decoded-result" class="emg-result-pill">Decoded: Waiting for signal...</span>
+                        </div>
+                    </div>
+
+                    <div class="wearable-control-card">
+                        <h3>Wristband Micro-Gesture Controller</h3>
+                        <p>Companion wrist-worn band commands via BLE:</p>
+                        <div class="gesture-triggers">
+                            <button class="wrist-btn" data-cmd="START_TRANSLATION">Double Tap ➔ Start Listening</button>
+                            <button class="wrist-btn" data-cmd="REPEAT_LAST">Flick Wrist ➔ Repeat Aloud</button>
+                            <button class="wrist-btn" data-cmd="CLARIFY">Thumb Snap ➔ Ask Clarification</button>
+                            <button class="wrist-btn" data-cmd="SWITCH_LANG">Palm Up ➔ Switch Language</button>
+                        </div>
+                        <div id="wearable-status" class="status-msg">BLE Peripheral: Connected (1000 Hz ADC)</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: Community Governance & Consent Portal -->
+        <section id="tab-governance" class="tab-pane">
+            <div class="feature-pane-wrapper">
+                <div class="feature-intro">
+                    <h2>Deaf Community Ethical Governance Portal (§9, §17)</h2>
+                    <p>Tereguwami is governed in active partnership with the Ethiopian Deaf community under the oversight of the Standing Deaf-Led Advisory Board.</p>
+                </div>
+                <div class="governance-grid">
+                    <div class="consent-check-card">
+                        <h3>Check & Manage Signer Consent</h3>
+                        <label for="gov-signer-id">Signer Registry ID</label>
+                        <input type="text" id="gov-signer-id" value="SIGNER_14">
+                        <div class="gov-actions">
+                            <button id="btn-verify-consent" class="action-btn">Verify Consent Status</button>
+                            <button id="btn-withdraw-consent" class="action-btn danger">Withdraw Consent & Purge Video</button>
+                        </div>
+                        <div id="gov-status" class="status-msg"></div>
+                    </div>
+                    <div class="charter-summary-card">
+                        <h3>Advisory Board Binding Veto Protocol</h3>
+                        <ul>
+                            <li><strong>Unconditional Right to Withdraw:</strong> Signers can withdraw their data at any time. Raw videos are purged immediately.</li>
+                            <li><strong>Deaf Majority Governance:</strong> 70%+ Deaf representation with binding veto power over commercialization.</li>
+                            <li><strong>Zero Raw Video Leakage:</strong> Edge personalization via federated learning ensures video never leaves user devices.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Shared SDK & Application Logic Scripts -->
+    <script src="../shared-components/tereguwami_sdk.js"></script>
+    <script src="../shared-components/state_store.js"></script>
+    <script src="avatar_embed.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

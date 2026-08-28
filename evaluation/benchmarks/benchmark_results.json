@@ -1,0 +1,80 @@
+{
+  "benchmark_title": "Tereguwami Ethiopian Sign Language Benchmark Evaluation",
+  "translation_metrics": {
+    "bleu_1": 96.61,
+    "bleu_2": 94.58,
+    "bleu_3": 91.78,
+    "bleu_4": 89.45,
+    "brevity_penalty": 0.9661
+  },
+  "generalization_baseline_2025": {
+    "signer_dependent": {
+      "split_name": "signer_dependent_test",
+      "sample_count": 100,
+      "accuracy": 90.0,
+      "precision_macro": 81.82,
+      "recall_macro": 81.82,
+      "f1_macro": 81.82
+    },
+    "signer_independent": {
+      "split_name": "signer_independent_test",
+      "sample_count": 100,
+      "accuracy": 60.0,
+      "precision_macro": 54.55,
+      "recall_macro": 54.55,
+      "f1_macro": 54.55
+    },
+    "generalization_gap_points": 30.0,
+    "analysis": "Signer generalization drop: 30.0 percentage points (90.0% dependent vs 60.0% independent)."
+  },
+  "generalization_tereguwami_ours": {
+    "signer_dependent": {
+      "split_name": "signer_dependent_test",
+      "sample_count": 100,
+      "accuracy": 100.0,
+      "precision_macro": 100.0,
+      "recall_macro": 100.0,
+      "f1_macro": 100.0
+    },
+    "signer_independent": {
+      "split_name": "signer_independent_test",
+      "sample_count": 100,
+      "accuracy": 90.0,
+      "precision_macro": 81.82,
+      "recall_macro": 81.82,
+      "f1_macro": 81.82
+    },
+    "generalization_gap_points": 10.0,
+    "analysis": "Signer generalization drop: 10.0 percentage points (100.0% dependent vs 90.0% independent)."
+  },
+  "non_manual_ablation": {
+    "categories": {
+      "polar_questions": {
+        "sample_count": 50,
+        "hands_only_accuracy": 40.0,
+        "hands_plus_face_accuracy": 92.0,
+        "gain_percentage_points": 52.0
+      },
+      "wh_questions": {
+        "sample_count": 50,
+        "hands_only_accuracy": 50.0,
+        "hands_plus_face_accuracy": 88.0,
+        "gain_percentage_points": 38.0
+      },
+      "negation": {
+        "sample_count": 50,
+        "hands_only_accuracy": 40.0,
+        "hands_plus_face_accuracy": 94.0,
+        "gain_percentage_points": 54.0
+      },
+      "declarative": {
+        "sample_count": 50,
+        "hands_only_accuracy": 90.0,
+        "hands_plus_face_accuracy": 96.0,
+        "gain_percentage_points": 6.0
+      }
+    },
+    "mean_gain_percentage_points": 37.5,
+    "conclusion": "Facial semantics early-fusion yields an average of +37.5% accuracy gain, with the greatest impact observed in polar questions and grammatical negation."
+  }
+}

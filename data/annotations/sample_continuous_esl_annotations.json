@@ -1,0 +1,122 @@
+[
+  {
+    "sample_id": "ESL_MED_001",
+    "signer_id": "SIGNER_14",
+    "domain": "healthcare",
+    "video_metadata": {
+      "frame_count": 75,
+      "fps": 25,
+      "resolution": "1080x1920",
+      "lighting_condition": "ambient_daylight",
+      "camera_angle": "frontal_eye_level"
+    },
+    "gloss": "DOCTOR I HEAD PAIN VERY-STRONG",
+    "translation_am": "ዶክተር ብርቱ የራስ ምታት አለኝ።",
+    "translation_om": "Doktoraa mataa dhukkubbi cimaatu na qaba.",
+    "translation_en": "Doctor, I have a very severe headache.",
+    "non_manual_markers": [
+      { "start_frame": 15, "end_frame": 45, "type": "eyebrow_furrowed", "linguistic_role": "intensity_marking" },
+      { "start_frame": 20, "end_frame": 50, "type": "mouth_grimace", "linguistic_role": "affective_pain" }
+    ],
+    "is_question": false,
+    "is_negation": false,
+    "confidence_score": 0.98,
+    "consent_verified": true
+  },
+  {
+    "sample_id": "ESL_MED_002",
+    "signer_id": "SIGNER_22",
+    "domain": "healthcare",
+    "video_metadata": {
+      "frame_count": 60,
+      "fps": 30,
+      "resolution": "720x1280",
+      "lighting_condition": "clinic_fluorescent",
+      "camera_angle": "frontal_slight_low"
+    },
+    "gloss": "MEDICINE EAT BEFORE OR AFTER FOOD ?",
+    "translation_am": "መድኃኒቱን የምወስደው ከምግብ በፊት ነው ወይስ በኋላ?",
+    "translation_om": "Qoricha kana nyaata dura moo boodan fudhadha?",
+    "translation_en": "Do I take this medicine before or after meals?",
+    "non_manual_markers": [
+      { "start_frame": 35, "end_frame": 60, "type": "eyebrow_raised", "linguistic_role": "polar_question" },
+      { "start_frame": 40, "end_frame": 60, "type": "head_tilt_forward", "linguistic_role": "interrogative" }
+    ],
+    "is_question": true,
+    "is_negation": false,
+    "confidence_score": 0.96,
+    "consent_verified": true
+  },
+  {
+    "sample_id": "ESL_LEG_001",
+    "signer_id": "SIGNER_08",
+    "domain": "legal_court",
+    "video_metadata": {
+      "frame_count": 90,
+      "fps": 30,
+      "resolution": "1080x1920",
+      "lighting_condition": "courtroom_overhead",
+      "camera_angle": "frontal_seated"
+    },
+    "gloss": "ACCUSATION FALSE I THAT MONEY NOT TAKE",
+    "translation_am": "ክሱ ሀሰት ነው፤ እኔ ያንን ገንዘብ አልወሰድኩም።",
+    "translation_om": "Himanni kun soba; ani maallaqa sana hin fudhanne.",
+    "translation_en": "The accusation is false; I did not take that money.",
+    "non_manual_markers": [
+      { "start_frame": 45, "end_frame": 85, "type": "head_shake", "linguistic_role": "grammatical_negation" },
+      { "start_frame": 50, "end_frame": 75, "type": "lip_corner_depressed", "linguistic_role": "denial" }
+    ],
+    "is_question": false,
+    "is_negation": true,
+    "confidence_score": 0.95,
+    "consent_verified": true
+  },
+  {
+    "sample_id": "ESL_CIV_001",
+    "signer_id": "SIGNER_45",
+    "domain": "everyday_civic",
+    "video_metadata": {
+      "frame_count": 55,
+      "fps": 25,
+      "resolution": "1080x1920",
+      "lighting_condition": "outdoor_shadow",
+      "camera_angle": "mobile_handheld"
+    },
+    "gloss": "BANK TRANSFER SUCCESS WHERE RECEIPT ?",
+    "translation_am": "የባንክ ማስተላለፉ ተሳክቷል፤ ደረሰኙ የት አለ?",
+    "translation_om": "Dabarsuun baankichaa raawwateera; nagaanichoo eessa jira?",
+    "translation_en": "The bank transfer was successful; where is the receipt?",
+    "non_manual_markers": [
+      { "start_frame": 30, "end_frame": 55, "type": "eyebrow_furrowed", "linguistic_role": "wh_question" },
+      { "start_frame": 32, "end_frame": 55, "type": "head_tilt_lateral", "linguistic_role": "locative_query" }
+    ],
+    "is_question": true,
+    "is_negation": false,
+    "confidence_score": 0.97,
+    "consent_verified": true
+  },
+  {
+    "sample_id": "ESL_EDU_001",
+    "signer_id": "SIGNER_63",
+    "domain": "education",
+    "video_metadata": {
+      "frame_count": 80,
+      "fps": 25,
+      "resolution": "1080x1920",
+      "lighting_condition": "classroom_diffuse",
+      "camera_angle": "podium_view"
+    },
+    "gloss": "TEACHER QUESTION REPEAT AGAIN PLEASE",
+    "translation_am": "መምህር እባክዎ ጥያቄውን በድጋሚ ይድገሙት።",
+    "translation_om": "Barsiisaa maaloo gaafficha lammata nuuf deebisaa.",
+    "translation_en": "Teacher, please repeat the question again.",
+    "non_manual_markers": [
+      { "start_frame": 20, "end_frame": 60, "type": "head_nod_gentle", "linguistic_role": "polite_request" },
+      { "start_frame": 25, "end_frame": 65, "type": "mouth_pucker", "linguistic_role": "manner_repetition" }
+    ],
+    "is_question": false,
+    "is_negation": false,
+    "confidence_score": 0.99,
+    "consent_verified": true
+  }
+]

@@ -1,0 +1,21 @@
+{
+  "split_name": "signer_independent_train",
+  "protocol": "Signer-Independent (Zero Signer Overlap)",
+  "total_signers": 60,
+  "signers": [
+    "SIGNER_01", "SIGNER_02", "SIGNER_03", "SIGNER_04", "SIGNER_05",
+    "SIGNER_06", "SIGNER_07", "SIGNER_08", "SIGNER_09", "SIGNER_10",
+    "SIGNER_11", "SIGNER_12", "SIGNER_13", "SIGNER_14", "SIGNER_15",
+    "SIGNER_16", "SIGNER_17", "SIGNER_18", "SIGNER_19", "SIGNER_20",
+    "SIGNER_21", "SIGNER_22", "SIGNER_23", "SIGNER_24", "SIGNER_25",
+    "SIGNER_26", "SIGNER_27", "SIGNER_28", "SIGNER_29", "SIGNER_30",
+    "SIGNER_31", "SIGNER_32", "SIGNER_33", "SIGNER_34", "SIGNER_35",
+    "SIGNER_36", "SIGNER_37", "SIGNER_38", "SIGNER_39", "SIGNER_40",
+    "SIGNER_41", "SIGNER_42", "SIGNER_43", "SIGNER_44", "SIGNER_45",
+    "SIGNER_46", "SIGNER_47", "SIGNER_48", "SIGNER_49", "SIGNER_50",
+    "SIGNER_51", "SIGNER_52", "SIGNER_53", "SIGNER_54", "SIGNER_55",
+    "SIGNER_56", "SIGNER_57", "SIGNER_58", "SIGNER_59", "SIGNER_60"
+  ],
+  "target_utterances": 4200,
+  "domains": ["healthcare", "legal_court", "education", "everyday_civic"]
+}

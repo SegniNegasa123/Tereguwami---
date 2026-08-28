@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="am">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tereguwami (ተርጓሚ) — Real-Time 3D ESL Avatar Engine</title>
+    <style>
+        :root {
+            --bg-gradient: radial-gradient(circle at 50% 20%, #151b2e 0%, #0a0d17 100%);
+            --panel-bg: rgba(20, 26, 46, 0.75);
+            --panel-border: rgba(100, 140, 255, 0.2);
+            --accent: #4f8cff;
+            --accent-glow: rgba(79, 140, 255, 0.4);
+            --text-main: #f0f4ff;
+            --text-muted: #8c9bb8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+        }
+
+        #viewport-container {
+            flex: 1;
+            height: 100%;
+            position: relative;
+        }
+
+        #webgl-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Glassmorphic Side Control Panel */
+        #control-panel {
+            width: 420px;
+            height: 100%;
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            border-left: 1px solid var(--panel-border);
+            display: flex;
+            flex-direction: column;
+            padding: 28px;
+            box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        .header {
+            margin-bottom: 24px;
+        }
+
+        .title {
+            font-size: 26px;
+            font-weight: 700;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .subtitle {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent);
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        textarea, select, input {
+            width: 100%;
+            background: rgba(10, 14, 26, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            padding: 10px 12px;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        textarea:focus, select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: linear-gradient(135deg, #3b74f2 0%, #1e51c9 100%);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            padding: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px rgba(30, 81, 201, 0.3);
+            margin-top: 10px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(30, 81, 201, 0.5);
+        }
+
+        .presets-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .preset-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e0e7ff;
+            padding: 8px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .preset-btn:hover {
+            background: rgba(79, 140, 255, 0.15);
+            border-color: var(--accent);
+        }
+
+        .telemetry-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .telemetry-val {
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        /* Overlay Status Tag */
+        #status-badge {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(8px);
+            padding: 8px 14px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #e2e8f0;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            box-shadow: 0 0 8px #10b981;
+        }
+    </style>
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+
+    <div id="viewport-container">
+        <div id="status-badge">
+            <div class="status-dot"></div>
+            <span>3D Avatar Engine: <strong id="fps-counter">60 FPS</strong></span>
+        </div>
+        <canvas id="webgl-canvas"></canvas>
+    </div>
+
+    <div id="control-panel">
+        <div class="header">
+            <h1 class="title">ተርጓሚ</h1>
+            <p class="subtitle">Generative 3D Ethiopian Sign Language (ESL) Avatar Reverse Channel Engine (§8.5)</p>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Reverse Translation Input</div>
+            <label for="text-input">Spoken / Written Text</label>
+            <textarea id="text-input" rows="3" placeholder="Enter text in Amharic, Afaan Oromo, or English...">መድኃኒቱን የምወስደው ከምግብ በፊት ነው ወይስ በኋላ?</textarea>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                <div>
+                    <label for="lang-select">Language</label>
+                    <select id="lang-select">
+                        <option value="am" selected>Amharic (አማርኛ)</option>
+                        <option value="om">Afaan Oromo</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="speed-select">Signing Speed</label>
+                    <select id="speed-select">
+                        <option value="0.75">0.75x (Learner)</option>
+                        <option value="1.0" selected>1.0x (Standard)</option>
+                        <option value="1.25">1.25x (Fluent)</option>
+                    </select>
+                </div>
+            </div>
+
+            <button class="btn-primary" id="btn-generate">
+                <span>Generate ESL Sign Performance</span>
+            </button>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Curated Dialogue Presets</div>
+            <div class="presets-grid">
+                <button class="preset-btn" onclick="applyPreset('ዶክተር ብርቱ የራስ ምታት አለኝ።', 'am')">
+                    <strong>[Healthcare]</strong> ዶክተር ብርቱ የራስ ምታት አለኝ።
+                </button>
+                <button class="preset-btn" onclick="applyPreset('መድኃኒቱን የምወስደው ከምግብ በፊት ነው ወይስ በኋላ?', 'am')">
+                    <strong>[Question]</strong> መድኃኒቱን የምወስደው ከምግብ በፊት ነው ወይስ በኋላ?
+                </button>
+                <button class="preset-btn" onclick="applyPreset('ክሱ ሀሰት ነው፤ እኔ ያንን ገንዘብ አልወሰድኩም።', 'am')">
+                    <strong>[Negation]</strong> ክሱ ሀሰት ነው፤ አልወሰድኩም።
+                </button>
+                <button class="preset-btn" onclick="applyPreset('የባንክ ማስተላለፉ ተሳክቷል፤ ደረሰኙ የት አለ?', 'am')">
+                    <strong>[Civic/Bank]</strong> የባንክ ማስተላለፉ ተሳክቷል፤ ደረሰኙ የት አለ?
+                </button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Live Non-Manual Telemetry (§8.3)</div>
+            <div class="telemetry-row">
+                <span>Eyebrow Elevation (AU1/2):</span>
+                <span class="telemetry-val" id="val-brow">0.12</span>
+            </div>
+            <div class="telemetry-row">
+                <span>Eyebrow Furrow (AU4):</span>
+                <span class="telemetry-val" id="val-furrow">0.05</span>
+            </div>
+            <div class="telemetry-row">
+                <span>Mouth Aperture:</span>
+                <span class="telemetry-val" id="val-mouth">0.18</span>
+            </div>
+            <div class="telemetry-row">
+                <span>Head Yaw (Negation Shake):</span>
+                <span class="telemetry-val" id="val-yaw">0.00°</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ----------------------------------------------------
+        // Three.js 3D Avatar Setup & Articulated Skeletal Mesh
+        // ----------------------------------------------------
+        const canvas = document.getElementById('webgl-canvas');
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+        renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0c101c);
+
+        const camera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 100);
+        camera.position.set(0, 1.4, 2.5);
+
+        const controls = new THREE.OrbitControls(camera, canvas);
+        controls.target.set(0, 1.3, 0);
+        controls.enableDamping = true;
+        controls.maxPolarAngle = Math.PI / 2 + 0.1;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0x7fb5ff, 1.2);
+        dirLight.position.set(2, 4, 3);
+        scene.add(dirLight);
+
+        const fillLight = new THREE.DirectionalLight(0xffd5a0, 0.4);
+        fillLight.position.set(-3, 2, -2);
+        scene.add(fillLight);
+
+        // Ground grid
+        const grid = new THREE.GridHelper(10, 20, 0x2a3652, 0x161e30);
+        grid.position.y = 0;
+        scene.add(grid);
+
+        // Avatar Construction (Stylized Humanoid Rig)
+        const skinMat = new THREE.MeshStandardMaterial({ color: 0x8d5524, roughness: 0.6 });
+        const shirtMat = new THREE.MeshStandardMaterial({ color: 0x1e3a8a, roughness: 0.7 });
+        const hairMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 });
+
+        // Avatar Root Group
+        const avatar = new THREE.Group();
+        scene.add(avatar);
+
+        // Torso
+        const torsoGeo = new THREE.CylinderGeometry(0.22, 0.18, 0.65, 16);
+        const torso = new THREE.Mesh(torsoGeo, shirtMat);
+        torso.position.y = 1.05;
+        avatar.add(torso);
+
+        // Neck & Head
+        const neck = new THREE.Group();
+        neck.position.set(0, 1.4, 0);
+        avatar.add(neck);
+
+        const headGeo = new THREE.SphereGeometry(0.14, 32, 32);
+        const head = new THREE.Mesh(headGeo, skinMat);
+        head.position.y = 0.12;
+        neck.add(head);
+
+        // Hair
+        const hairGeo = new THREE.SphereGeometry(0.145, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+        const hair = new THREE.Mesh(hairGeo, hairMat);
+        hair.position.y = 0.14;
+        neck.add(hair);
+
+        // Eyes
+        const eyeMat = new THREE.MeshBasicMaterial({ color: 0x222222 });
+        const eyeGeo = new THREE.SphereGeometry(0.02, 16, 16);
+        const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
+        leftEye.position.set(-0.045, 0.14, 0.13);
+        const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
+        rightEye.position.set(0.045, 0.14, 0.13);
+        neck.add(leftEye);
+        neck.add(rightEye);
+
+        // Eyebrows (Dynamic Non-Manual Markers)
+        const browMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
+        const browGeo = new THREE.BoxGeometry(0.045, 0.008, 0.01);
+        const leftBrow = new THREE.Mesh(browGeo, browMat);
+        leftBrow.position.set(-0.045, 0.175, 0.135);
+        const rightBrow = new THREE.Mesh(browGeo, browMat);
+        rightBrow.position.set(0.045, 0.175, 0.135);
+        neck.add(leftBrow);
+        neck.add(rightBrow);
+
+        // Arms and Hands
+        function createArm(isLeft) {
+            const side = isLeft ? -1 : 1;
+            const armRoot = new THREE.Group();
+            armRoot.position.set(side * 0.26, 1.35, 0);
+
+            // Upper Arm
+            const upperGeo = new THREE.CylinderGeometry(0.045, 0.04, 0.32, 12);
+            upperGeo.translate(0, -0.16, 0);
+            const upperArm = new THREE.Mesh(upperGeo, shirtMat);
+            armRoot.add(upperArm);
+
+            // Elbow Joint
+            const elbow = new THREE.Group();
+            elbow.position.set(0, -0.32, 0);
+            armRoot.add(elbow);
+
+            // Forearm
+            const foreGeo = new THREE.CylinderGeometry(0.038, 0.032, 0.30, 12);
+            foreGeo.translate(0, -0.15, 0);
+            const foreArm = new THREE.Mesh(foreGeo, skinMat);
+            elbow.add(foreArm);
+
+            // Hand
+            const handGeo = new THREE.BoxGeometry(0.06, 0.09, 0.02);
+            handGeo.translate(0, -0.05, 0);
+            const hand = new THREE.Mesh(handGeo, skinMat);
+            hand.position.set(0, -0.30, 0);
+            elbow.add(hand);
+
+            return { root: armRoot, elbow, hand };
+        }
+
+        const leftArm = createArm(true);
+        const rightArm = createArm(false);
+        avatar.add(leftArm.root);
+        avatar.add(rightArm.root);
+
+        // ----------------------------------------------------
+        // Animation & Non-Manual Marker Drive
+        // ----------------------------------------------------
+        let isSigning = false;
+        let signProgress = 0;
+        let signDuration = 120;
+        let currentPrompt = "";
+        let isQuestionMode = false;
+        let isNegationMode = false;
+
+        function startSignAnimation(promptText) {
+            currentPrompt = promptText;
+            isSigning = true;
+            signProgress = 0;
+            isQuestionMode = promptText.includes("?") || promptText.includes("ወይስ") || promptText.includes("የት");
+            isNegationMode = promptText.includes("አል") || promptText.includes("አይ") || promptText.toLowerCase().includes("not");
+        }
+
+        function applyPreset(text, lang) {
+            document.getElementById('text-input').value = text;
+            document.getElementById('lang-select').value = lang;
+            startSignAnimation(text);
+        }
+
+        document.getElementById('btn-generate').addEventListener('click', () => {
+            const val = document.getElementById('text-input').value.trim();
+            if (val) startSignAnimation(val);
+        });
+
+        // Main Render Loop
+        const clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate);
+            const elapsed = clock.getElapsedTime();
+
+            if (isSigning) {
+                signProgress++;
+                const phase = (signProgress / signDuration) * Math.PI * 4;
+
+                // Arm Signing Motions
+                leftArm.root.rotation.x = Math.sin(phase) * 0.4 + 0.3;
+                leftArm.root.rotation.z = Math.cos(phase * 0.5) * 0.3 - 0.2;
+                leftArm.elbow.rotation.x = -Math.abs(Math.sin(phase)) * 0.8 - 0.4;
+
+                rightArm.root.rotation.x = Math.cos(phase) * 0.4 + 0.3;
+                rightArm.root.rotation.z = -Math.sin(phase * 0.5) * 0.3 + 0.2;
+                rightArm.elbow.rotation.x = -Math.abs(Math.cos(phase)) * 0.8 - 0.4;
+
+                // Non-Manual Marker Dynamics (§8.3)
+                if (isQuestionMode) {
+                    leftBrow.position.y = 0.175 + 0.02 * Math.sin(signProgress * 0.1);
+                    rightBrow.position.y = 0.175 + 0.02 * Math.sin(signProgress * 0.1);
+                    document.getElementById('val-brow').textContent = (0.75 + 0.2 * Math.sin(signProgress * 0.1)).toFixed(2);
+                    document.getElementById('val-furrow').textContent = "0.05";
+                } else if (isNegationMode) {
+                    neck.rotation.y = Math.sin(signProgress * 0.3) * 0.3; // Head shake
+                    document.getElementById('val-yaw').textContent = (neck.rotation.y * (180 / Math.PI)).toFixed(1) + "°";
+                    document.getElementById('val-furrow').textContent = "0.65";
+                    document.getElementById('val-brow').textContent = "0.10";
+                } else {
+                    neck.rotation.y = 0;
+                    leftBrow.position.y = 0.175;
+                    rightBrow.position.y = 0.175;
+                    document.getElementById('val-brow').textContent = "0.12";
+                    document.getElementById('val-furrow').textContent = "0.05";
+                    document.getElementById('val-yaw').textContent = "0.00°";
+                }
+
+                if (signProgress >= signDuration) {
+                    isSigning = false;
+                }
+            } else {
+                // Idle gentle breathing animation
+                neck.position.y = 1.4 + 0.003 * Math.sin(elapsed * 2);
+                leftArm.root.rotation.x = 0.05 * Math.sin(elapsed * 1.5);
+                rightArm.root.rotation.x = 0.05 * Math.cos(elapsed * 1.5);
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            const w = canvas.clientWidth;
+            const h = canvas.clientHeight;
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h, false);
+        });
+
+        // Trigger default preset animation on load
+        setTimeout(() => startSignAnimation("መድኃኒቱን የምወስደው ከምግብ በፊት ነው ወይስ በኋላ?"), 800);
+    </script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+# Experiment Configuration: 2025 Ethiopian Academic Baseline Reproduction
+experiment_name: "reproduce_2025_ethiopian_sota_cnn_lstm"
+model_architecture: "CNN_LSTM"
+input_features: 1629  # 543 * 3 landmarks
+cnn_channels: 256
+lstm_hidden_dim: 256
+num_lstm_layers: 2
+dropout: 0.3
+num_classes: 100
+
+training:
+  batch_size: 16
+  learning_rate: 0.001
+  optimizer: "AdamW"
+  weight_decay: 0.01
+  epochs: 50
+  early_stopping_patience: 7
+
+evaluation:
+  signer_dependent_split: "data/splits/signer_dependent_test.json"
+  signer_independent_split: "data/splits/signer_independent_test.json"
+  target_dependent_acc: 94.0
+  target_independent_acc: 73.0

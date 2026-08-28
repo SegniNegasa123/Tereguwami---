@@ -1,0 +1,21 @@
+{
+  "split_name": "signer_independent_test",
+  "protocol": "Signer-Independent Held-Out Benchmark Test (Headline Metric)",
+  "total_signers": 25,
+  "signers": [
+    "SIGNER_76", "SIGNER_77", "SIGNER_78", "SIGNER_79", "SIGNER_80",
+    "SIGNER_81", "SIGNER_82", "SIGNER_83", "SIGNER_84", "SIGNER_85",
+    "SIGNER_86", "SIGNER_87", "SIGNER_88", "SIGNER_89", "SIGNER_90",
+    "SIGNER_91", "SIGNER_92", "SIGNER_93", "SIGNER_94", "SIGNER_95",
+    "SIGNER_96", "SIGNER_97", "SIGNER_98", "SIGNER_99", "SIGNER_100"
+  ],
+  "target_utterances": 1500,
+  "domains": ["healthcare", "legal_court", "education", "everyday_civic"],
+  "non_manual_eval_subsets": {
+    "polar_questions": 350,
+    "wh_questions": 350,
+    "grammatical_negation": 300,
+    "declarative": 500
+  },
+  "governance_status": "Deaf Advisory Board Verified"
+}

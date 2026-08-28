@@ -1,0 +1,7 @@
+# Ignore raw videos and large data files
+raw/*
+!raw/.gitkeep
+!raw/README.md
+processed/*.h5
+processed/*.npz
+processed/*.tar.gz

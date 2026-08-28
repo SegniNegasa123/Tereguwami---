@@ -1,0 +1,29 @@
+# Experiment Configuration: Gloss-Free Multimodal Transformer with Afrocentric Decoder
+experiment_name: "tereguwami_gloss_free_multimodal_transformer"
+model_architecture: "GlossFreeSignTransformer"
+input_features: 1629
+d_model: 512
+nhead: 8
+num_encoder_layers: 6
+num_decoder_layers: 6
+dim_feedforward: 2048
+dropout: 0.1
+
+pretraining:
+  corpora: ["PHOENIX-2014T", "How2Sign", "CSL-Daily"]
+  cross_lingual_transfer: true
+
+multilingual_targets:
+  languages: ["am", "om", "en"]
+  decoder_backbone: "AfriBERTa-large"
+  vocabulary_size: 32000
+
+decoding_guardrails:
+  constrained_beam_search: true
+  min_confidence_threshold: 0.70
+  high_stakes_threshold: 0.80
+
+evaluation:
+  test_split: "data/splits/signer_independent_test.json"
+  target_signer_independent_acc: 88.0
+  target_bleu_4: 31.5

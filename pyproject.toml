@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tereguwami"
+version = "1.0.0"
+description = "Tereguwami (ተርጓሚ): An Adaptive Multimodal AI System for Two-Way Communication Between Ethiopian Sign Language Users and Non-Signers"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "Segni Seyoum Negasa", email = "segni@tereguwami.org" }
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn>=0.30.0",
+    "pydantic>=2.8.0",
+    "numpy>=1.26.0",
+    "scikit-learn>=1.5.0",
+    "scipy>=1.12.0",
+    "requests>=2.32.0",
+    "httpx>=0.27.0",
+]
+
+[project.optional-dependencies]
+ml = [
+    "torch>=2.3.0",
+    "transformers>=4.42.0",
+    "datasets>=2.20.0",
+    "mediapipe>=0.10.14",
+    "opencv-python>=4.10.0"
+]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0"
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
