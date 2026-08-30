@@ -1,116 +1,68 @@
 """
-SignAvatars / SMPL-X 3D Skeletal & MANO Hand Retargeting Engine (§8.5, §11)
-Part of Tereguwami (ተርጓሚ) Avatar Rigging & Animation Pipeline
-Adapted from SignAvatars (Zhengdi Yu et al., ECCV 2024 / SMPL-X & MANO Benchmark)
-
-Retargets 543 MediaPipe Holistic landmarks to SMPL-X 21-joint body skeleton and
-MANO 15-joint articulated hand transforms for expressive 3D signing avatar animation.
+Tereguwami Layer 4: Bone Retargeter
+Maps SignAvatars SMPL-X/MANO joint tensors into standard Ready Player Me / Mixamo bone names.
 """
 
-from typing import Dict, List, Any, Tuple
-import numpy as np
+from typing import Dict, Any
+
+SMPLX_TO_RPM_BODY_MAP = {
+    "pelvis": "Hips",
+    "spine1": "Spine",
+    "spine2": "Spine1",
+    "spine3": "Spine2",
+    "neck": "Neck",
+    "head": "Head",
+    "left_collar": "LeftShoulder",
+    "right_collar": "RightShoulder",
+    "left_shoulder": "LeftArm",
+    "right_shoulder": "RightArm",
+    "left_elbow": "LeftForeArm",
+    "right_elbow": "RightForeArm",
+    "left_wrist": "LeftHand",
+    "right_wrist": "RightHand",
+}
+
+MANO_TO_RPM_HAND_MAP = {
+    # Right Hand Digits
+    "right_thumb_1": "RightHandThumb1",
+    "right_thumb_2": "RightHandThumb2",
+    "right_thumb_3": "RightHandThumb3",
+    "right_index_1": "RightHandIndex1",
+    "right_index_2": "RightHandIndex2",
+    "right_index_3": "RightHandIndex3",
+    "right_middle_1": "RightHandMiddle1",
+    "right_middle_2": "RightHandMiddle2",
+    "right_middle_3": "RightHandMiddle3",
+    "right_ring_1": "RightHandRing1",
+    "right_ring_2": "RightHandRing2",
+    "right_ring_3": "RightHandRing3",
+    "right_pinky_1": "RightHandPinky1",
+    "right_pinky_2": "RightHandPinky2",
+    "right_pinky_3": "RightHandPinky3",
+    # Left Hand Digits
+    "left_thumb_1": "LeftHandThumb1",
+    "left_thumb_2": "LeftHandThumb2",
+    "left_thumb_3": "LeftHandThumb3",
+    "left_index_1": "LeftHandIndex1",
+    "left_index_2": "LeftHandIndex2",
+    "left_index_3": "LeftHandIndex3",
+    "left_middle_1": "LeftHandMiddle1",
+    "left_middle_2": "LeftHandMiddle2",
+    "left_middle_3": "LeftHandMiddle3",
+    "left_ring_1": "LeftHandRing1",
+    "left_ring_2": "LeftHandRing2",
+    "left_ring_3": "LeftHandRing3",
+    "left_pinky_1": "LeftHandPinky1",
+    "left_pinky_2": "LeftHandPinky2",
+    "left_pinky_3": "LeftHandPinky3",
+}
 
 
-class SignAvatarsSMPLXRetargeter:
-    """
-    Computes SMPL-X whole-body parameters and MANO hand joint rotations from 3D landmark arrays.
-    """
-
-    SMPLX_JOINTS = [
-        "pelvis", "left_hip", "right_hip", "spine1", "left_knee", "right_knee",
-        "spine2", "left_ankle", "right_ankle", "spine3", "left_foot", "right_foot",
-        "neck", "left_collar", "right_collar", "head", "left_shoulder", "right_shoulder",
-        "left_elbow", "right_elbow", "left_wrist", "right_wrist"
-    ]
-
-    @staticmethod
-    def _normalize_vector(v: np.ndarray) -> np.ndarray:
-        norm = np.linalg.norm(v)
-        return (v / norm) if norm > 1e-6 else v
-
-    @staticmethod
-    def _direction_to_rotation(direction: np.ndarray, reference: np.ndarray = np.array([0, -1, 0])) -> Dict[str, float]:
-        d = SignAvatarsSMPLXRetargeter._normalize_vector(direction)
-        pitch = float(np.arcsin(-np.clip(d[1], -1.0, 1.0)))
-        yaw = float(np.arctan2(d[0], d[2]))
-        roll = 0.0
-        return {"pitch": round(pitch, 4), "yaw": round(yaw, 4), "roll": round(roll, 4)}
-
-    def retarget_to_smplx(self, frame_landmarks: np.ndarray) -> Dict[str, Any]:
-        """
-        Input: frame_landmarks of shape (543, 3).
-        Returns SMPL-X parameter dictionary compatible with SignAvatars mesh renderers.
-        """
-        # Hips (pelvis)
-        left_hip = frame_landmarks[23]
-        right_hip = frame_landmarks[24]
-        hips_pos = (left_hip + right_hip) / 2.0
-
-        # Shoulders & Spine
-        left_shoulder = frame_landmarks[11]
-        right_shoulder = frame_landmarks[12]
-        shoulder_center = (left_shoulder + right_shoulder) / 2.0
-        spine_dir = shoulder_center - hips_pos
-        spine_rot = self._direction_to_rotation(spine_dir, reference=np.array([0, 1, 0]))
-
-        # Arms
-        left_elbow = frame_landmarks[13]
-        left_wrist = frame_landmarks[15]
-        left_upper_arm_dir = left_elbow - left_shoulder
-        left_forearm_dir = left_wrist - left_elbow
-        left_arm_rot = self._direction_to_rotation(left_upper_arm_dir)
-        left_forearm_rot = self._direction_to_rotation(left_forearm_dir)
-
-        right_elbow = frame_landmarks[14]
-        right_wrist = frame_landmarks[16]
-        right_upper_arm_dir = right_elbow - right_shoulder
-        right_forearm_dir = right_wrist - right_elbow
-        right_arm_rot = self._direction_to_rotation(right_upper_arm_dir)
-        right_forearm_rot = self._direction_to_rotation(right_forearm_dir)
-
-        # 15-joint MANO finger rotations per hand (45 floats each)
-        left_mano = [0.0] * 45
-        right_mano = [0.0] * 45
-
-        # 21 Hand keypoint positions
-        left_hand_pts = frame_landmarks[33:54].tolist()
-        right_hand_pts = frame_landmarks[54:75].tolist()
-
-        return {
-            "root_orient": [0.0, float(spine_rot["yaw"]), 0.0],
-            "trans": [round(float(hips_pos[0]), 4), round(float(hips_pos[1]), 4), round(float(hips_pos[2]), 4)],
-            "root_position": {"x": round(float(hips_pos[0]), 4), "y": round(float(hips_pos[1]), 4), "z": round(float(hips_pos[2]), 4)},
-            "bones": {
-                "spine": spine_rot,
-                "left_upper_arm": left_arm_rot,
-                "left_forearm": left_forearm_rot,
-                "right_upper_arm": right_arm_rot,
-                "right_forearm": right_forearm_rot
-            },
-            "smplx_body_pose": [
-                0.0, 0.0, 0.0,  # pelvis
-                0.0, 0.0, 0.0,  # left_hip
-                0.0, 0.0, 0.0,  # right_hip
-                spine_rot["pitch"], spine_rot["yaw"], 0.0,  # spine1
-                0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                left_arm_rot["pitch"], 0.0, left_arm_rot["yaw"],    # left shoulder (16)
-                right_arm_rot["pitch"], 0.0, right_arm_rot["yaw"],  # right shoulder (17)
-                left_forearm_rot["pitch"], 0.0, 0.0,                # left elbow (18)
-                right_forearm_rot["pitch"], 0.0, 0.0,               # right elbow (19)
-                0.0, 0.0, 0.0, 0.0, 0.0, 0.0
-            ],
-            "left_hand_pose": left_mano,
-            "right_hand_pose": right_mano,
-            "hands": {
-                "left_hand_landmarks": left_hand_pts,
-                "right_hand_landmarks": right_hand_pts
-            }
-        }
-
-    retarget_frame = retarget_to_smplx
-
-
-bone_retargeter = SignAvatarsSMPLXRetargeter()
-BoneRetargetingEngine = SignAvatarsSMPLXRetargeter
+def retarget_smplx_frame(smplx_dict: dict) -> dict:
+    """Converts raw SignAvatars SMPL-X Euler rotations into RPM-compatible key-value pairs."""
+    rpm_rotations = {}
+    for smplx_key, rpm_bone in {**SMPLX_TO_RPM_BODY_MAP, **MANO_TO_RPM_HAND_MAP}.items():
+        if smplx_key in smplx_dict:
+            rot = smplx_dict[smplx_key]
+            rpm_rotations[rpm_bone] = {"x": float(rot[0]), "y": float(rot[1]), "z": float(rot[2])}
+    return rpm_rotations
