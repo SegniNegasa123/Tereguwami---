@@ -1,598 +1,145 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SignAvatars (ECCV 2024) — 3D SMPL-X Holistic Motion Studio</title>
-    <style>
-        :root {
-            --bg: #090d16;
-            --panel-bg: rgba(15, 23, 42, 0.85);
-            --border: rgba(56, 189, 248, 0.25);
-            --accent: #38bdf8;
-            --accent-glow: rgba(56, 189, 248, 0.4);
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
-        }
-
-        body {
-            background: var(--bg);
-            color: var(--text-main);
-            overflow: hidden;
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-        }
-
-        #viewport-container {
-            flex: 1;
-            height: 100%;
-            position: relative;
-        }
-
-        #webgl-canvas {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
-
-        #control-panel {
-            width: 440px;
-            height: 100%;
-            background: var(--panel-bg);
-            backdrop-filter: blur(16px);
-            border-left: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            padding: 24px;
-            box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
-            z-index: 10;
-            overflow-y: auto;
-        }
-
-        .header {
-            margin-bottom: 20px;
-        }
-
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(56, 189, 248, 0.12);
-            border: 1px solid rgba(56, 189, 248, 0.35);
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 700;
-            color: var(--accent);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
-        }
-
-        .title {
-            font-size: 22px;
-            font-weight: 800;
-            color: #ffffff;
-        }
-
-        .subtitle {
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-top: 4px;
-            line-height: 1.4;
-        }
-
-        .card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 16px;
-        }
-
-        .card-title {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--accent);
-            font-weight: 700;
-            margin-bottom: 10px;
-        }
-
-        label {
-            display: block;
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-bottom: 6px;
-        }
-
-        textarea, select, input {
-            width: 100%;
-            background: rgba(10, 14, 26, 0.85);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 8px;
-            padding: 10px 12px;
-            color: #fff;
-            font-size: 13px;
-            outline: none;
-            transition: all 0.2s ease;
-        }
-
-        textarea:focus, select:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 10px var(--accent-glow);
-        }
-
-        .btn-primary {
-            width: 100%;
-            background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
-            border: none;
-            border-radius: 8px;
-            color: #0b0f19;
-            padding: 12px;
-            font-size: 13px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
-            margin-top: 10px;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 20px rgba(56, 189, 248, 0.5);
-        }
-
-        .presets-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 8px;
-        }
-
-        .preset-btn {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            color: #e0e7ff;
-            padding: 8px 10px;
-            border-radius: 6px;
-            font-size: 12px;
-            text-align: left;
-            cursor: pointer;
-            transition: all 0.15s ease;
-        }
-
-        .preset-btn:hover {
-            background: rgba(56, 189, 248, 0.15);
-            border-color: var(--accent);
-        }
-
-        .telemetry-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-bottom: 6px;
-        }
-
-        .telemetry-val {
-            color: #ffffff;
-            font-weight: 600;
-        }
-
-        #status-badge {
-            position: absolute;
-            top: 24px;
-            left: 24px;
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(8px);
-            padding: 8px 14px;
-            border-radius: 20px;
-            border: 1px solid var(--border);
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: #e2e8f0;
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #38bdf8;
-            box-shadow: 0 0 8px #38bdf8;
-        }
-    </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Tereguwami 3D Avatar Production Studio</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: radial-gradient(circle at center, #1e2430 0%, #0d1117 100%);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    #canvas-container {
+      width: 100vw;
+      height: 100vh;
+      display: block;
+    }
+    #loading-indicator {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #58a6ff;
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 1px;
+      transition: opacity 0.4s ease;
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 </head>
 <body>
+  <div id="loading-indicator">INITIALIZING TEREGUWAMI 3D AVATAR...</div>
+  <div id="canvas-container"></div>
 
-    <div id="viewport-container">
-        <div id="status-badge">
-            <div class="status-dot"></div>
-            <span>SignAvatars SMPL-X & MANO: <strong id="fps-counter">60 FPS</strong></span>
-        </div>
-        <canvas id="webgl-canvas"></canvas>
-    </div>
+  <script>
+    let scene, camera, renderer, avatarModel;
+    const bones = {};
+    const morphMeshes = [];
+    const AVATAR_URL = 'https://models.readyplayer.me/661feb3563b4a87a148eb0df.glb?morphTargets=ARKit,Oculus%20Visemes&meshLod=1';
 
-    <div id="control-panel">
-        <div class="header">
-            <div class="badge">Official SignAvatars Mesh Implementation</div>
-            <h1 class="title">SignAvatars SMPL-X Studio</h1>
-            <p class="subtitle">ECCV 2024 Whole-Body 3D Motion & MANO Articulated Hand Synthesis</p>
-        </div>
+    function init() {
+      const container = document.getElementById('canvas-container');
+      scene = new THREE.Scene();
 
-        <div class="card">
-            <div class="card-title">Motion Production Synthesis</div>
-            <label for="text-input">Prompt (Text / HamNoSys)</label>
-            <textarea id="text-input" rows="3" placeholder="Enter sentence in Amharic, Afaan Oromo, or English...">መድኃኒቱን የምወስደው ከምግብ በፊት ነው ወይስ በኋላ?</textarea>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
-                <div>
-                    <label for="lang-select">Language</label>
-                    <select id="lang-select">
-                        <option value="am" selected>Amharic (አማርኛ)</option>
-                        <option value="om">Afaan Oromoo</option>
-                        <option value="en">English</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="speed-select">Signing Speed</label>
-                    <select id="speed-select">
-                        <option value="0.75">0.75x (Learner)</option>
-                        <option value="1.0" selected>1.0x (Standard)</option>
-                        <option value="1.25">1.25x (Fluent)</option>
-                    </select>
-                </div>
-            </div>
+      // Camera framed to capture signer torso, hands, and facial Action Units
+      camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 50);
+      camera.position.set(0, 1.35, 1.25);
 
-            <button class="btn-primary" id="btn-generate">
-                <span>Synthesize SignAvatars SMPL-X Motion</span>
-            </button>
-        </div>
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.0));
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.1;
+      container.appendChild(renderer.domElement);
 
-        <div class="card">
-            <div class="card-title">Curated Dialogue Scenarios</div>
-            <div class="presets-grid">
-                <button class="preset-btn" onclick="applyPreset('ዶክተር ብርቱ የራስ ምታት አለኝ።', 'am')">
-                    <strong>[Healthcare]</strong> ዶክተር ብርቱ የራስ ምታት አለኝ።
-                </button>
-                <button class="preset-btn" onclick="applyPreset('መድኃኒቱን የምወስደው ከምግብ በፊት ነው ወይስ በኋላ?', 'am')">
-                    <strong>[Question]</strong> መድኃኒቱን የምወስደው ከምግብ በፊት ነው ወይስ በኋላ?
-                </button>
-                <button class="preset-btn" onclick="applyPreset('ክሱ ሀሰት ነው፤ እኔ ያንን ገንዘብ አልወሰድኩም።', 'am')">
-                    <strong>[Negation]</strong> ክሱ ሀሰት ነው፤ አልወሰድኩም።
-                </button>
-                <button class="preset-btn" onclick="applyPreset('የባንክ ማስተላለፉ ተሳክቷል፤ ደረሰኙ የት አለ?', 'am')">
-                    <strong>[Banking]</strong> የባንክ ማስተላለፉ ተሳክቷል፤ ደረሰኙ የት አለ?
-                </button>
-            </div>
-        </div>
+      // Studio 3-Point Lighting
+      const hemiLight = new THREE.HemisphereLight(0xffffff, 0x223344, 1.4);
+      scene.add(hemiLight);
 
-        <div class="card">
-            <div class="card-title">Live SMPL-X Parameter Telemetry</div>
-            <div class="telemetry-row">
-                <span>SMPL-X Body Joints:</span>
-                <span class="telemetry-val" id="val-body">21 Joints (63-D Rotations)</span>
-            </div>
-            <div class="telemetry-row">
-                <span>MANO Hand Articulations:</span>
-                <span class="telemetry-val" id="val-mano">30 Joints (15/hand, 90-D)</span>
-            </div>
-            <div class="telemetry-row">
-                <span>FLAME Facial Expressions:</span>
-                <span class="telemetry-val" id="val-flame">50-D Continuous Vectors</span>
-            </div>
-            <div class="telemetry-row">
-                <span>Mesh Surface Rendering:</span>
-                <span class="telemetry-val">PBR Silver-Clay Shader</span>
-            </div>
-        </div>
-    </div>
+      const keyLight = new THREE.DirectionalLight(0xffffff, 1.2);
+      keyLight.position.set(1.5, 2.5, 2.0);
+      scene.add(keyLight);
 
-    <script>
-        const canvas = document.getElementById('webgl-canvas');
-        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
-        renderer.setSize(canvas.clientWidth, canvas.clientHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      const fillLight = new THREE.DirectionalLight(0x88bbff, 0.6);
+      fillLight.position.set(-1.5, 1.5, 1.0);
+      scene.add(fillLight);
 
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x090d16);
+      loadRPMModel(AVATAR_URL);
+      animate();
+    }
 
-        const camera = new THREE.PerspectiveCamera(40, canvas.clientWidth / canvas.clientHeight, 0.1, 100);
-        camera.position.set(0, 1.45, 2.2);
+    function loadRPMModel(url) {
+      const loader = new THREE.GLTFLoader();
+      loader.load(url, (gltf) => {
+        if (avatarModel) scene.remove(avatarModel);
+        avatarModel = gltf.scene;
+        scene.add(avatarModel);
 
-        const controls = new THREE.OrbitControls(camera, canvas);
-        controls.target.set(0, 1.3, 0);
-        controls.enableDamping = true;
-
-        // Lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-        scene.add(ambientLight);
-
-        const keyLight = new THREE.DirectionalLight(0xe2e8f0, 1.4);
-        keyLight.position.set(3, 4, 3);
-        keyLight.castShadow = true;
-        scene.add(keyLight);
-
-        const fillLight = new THREE.DirectionalLight(0x60a5fa, 0.6);
-        fillLight.position.set(-3, 2, 2);
-        scene.add(fillLight);
-
-        const rimLight = new THREE.DirectionalLight(0x38bdf8, 0.8);
-        rimLight.position.set(0, 3, -3);
-        scene.add(rimLight);
-
-        const grid = new THREE.GridHelper(10, 20, 0x1e293b, 0x0f172a);
-        grid.position.y = 0;
-        scene.add(grid);
-
-        // SignAvatars SMPL-X Materials
-        const smplxMaterial = new THREE.MeshStandardMaterial({
-            color: 0x94a3b8,
-            roughness: 0.35,
-            metalness: 0.15
-        });
-        const accentMaterial = new THREE.MeshStandardMaterial({
-            color: 0x38bdf8,
-            roughness: 0.3,
-            metalness: 0.25
-        });
-        const darkMaterial = new THREE.MeshStandardMaterial({
-            color: 0x1e293b,
-            roughness: 0.8
+        avatarModel.traverse((node) => {
+          if (node.isBone) {
+            bones[node.name] = node;
+          }
+          if (node.isMesh && node.morphTargetDictionary) {
+            morphMeshes.push(node);
+          }
         });
 
-        // SMPL-X Full-Body Rig Construction
-        const rootGroup = new THREE.Group();
-        scene.add(rootGroup);
+        const loaderText = document.getElementById('loading-indicator');
+        if (loaderText) {
+          loaderText.style.opacity = '0';
+          setTimeout(() => loaderText.remove(), 400);
+        }
+        console.log(`[Tereguwami Avatar] RPM Model Loaded. Indexed ${Object.keys(bones).length} bones and ${morphMeshes.length} morph targets.`);
+      }, undefined, (error) => {
+        console.error('[Tereguwami Avatar] Failed to load Ready Player Me GLB:', error);
+      });
+    }
 
-        const pelvisGeo = new THREE.SphereGeometry(0.16, 24, 16);
-        pelvisGeo.scale(1.2, 0.9, 0.9);
-        const pelvis = new THREE.Mesh(pelvisGeo, smplxMaterial);
-        pelvis.position.set(0, 0.95, 0);
-        rootGroup.add(pelvis);
+    // High-performance direct frame updater (called from WebSocket / API stream)
+    window.renderSignFrame = function(framePayload) {
+      if (!avatarModel) return;
+      const frame = (typeof framePayload === 'string') ? JSON.parse(framePayload) : framePayload;
 
-        const spine1 = new THREE.Group();
-        spine1.position.set(0, 0.1, 0);
-        pelvis.add(spine1);
+      // 1. Update Joint Rotations (SMPL-X / MANO retargeted bones)
+      if (frame.rotations) {
+        for (const [boneName, rot] of Object.entries(frame.rotations)) {
+          if (bones[boneName]) {
+            bones[boneName].rotation.set(rot.x, rot.y, rot.z);
+          }
+        }
+      }
 
-        const lowerTorsoGeo = new THREE.CylinderGeometry(0.18, 0.16, 0.18, 24);
-        const lowerTorso = new THREE.Mesh(lowerTorsoGeo, smplxMaterial);
-        lowerTorso.position.y = 0.09;
-        spine1.add(lowerTorso);
-
-        const spine2 = new THREE.Group();
-        spine2.position.set(0, 0.18, 0);
-        spine1.add(spine2);
-
-        const chestGeo = new THREE.CylinderGeometry(0.23, 0.19, 0.22, 28);
-        const chest = new THREE.Mesh(chestGeo, smplxMaterial);
-        chest.position.y = 0.11;
-        spine2.add(chest);
-
-        const neckGroup = new THREE.Group();
-        neckGroup.position.set(0, 0.22, 0);
-        spine2.add(neckGroup);
-
-        const neckGeo = new THREE.CylinderGeometry(0.065, 0.08, 0.12, 20);
-        const neck = new THREE.Mesh(neckGeo, smplxMaterial);
-        neck.position.y = 0.06;
-        neckGroup.add(neck);
-
-        const headGroup = new THREE.Group();
-        headGroup.position.set(0, 0.12, 0);
-        neckGroup.add(headGroup);
-
-        const craniumGeo = new THREE.SphereGeometry(0.13, 32, 24);
-        craniumGeo.scale(1.0, 1.15, 1.1);
-        const cranium = new THREE.Mesh(craniumGeo, smplxMaterial);
-        headGroup.add(cranium);
-
-        const browGeo = new THREE.BoxGeometry(0.042, 0.009, 0.015);
-        const leftBrow = new THREE.Mesh(browGeo, darkMaterial);
-        leftBrow.position.set(-0.042, 0.035, 0.13);
-        const rightBrow = new THREE.Mesh(browGeo, darkMaterial);
-        rightBrow.position.set(0.042, 0.035, 0.13);
-        headGroup.add(leftBrow);
-        headGroup.add(rightBrow);
-
-        const mouthGeo = new THREE.CylinderGeometry(0.028, 0.028, 0.01, 16);
-        mouthGeo.rotateX(Math.PI / 2);
-        const mouth = new THREE.Mesh(mouthGeo, darkMaterial);
-        mouth.position.set(0, -0.05, 0.125);
-        headGroup.add(mouth);
-
-        function createMANOHand(isLeft) {
-            const side = isLeft ? -1 : 1;
-            const handRoot = new THREE.Group();
-
-            const palmGeo = new THREE.BoxGeometry(0.055, 0.07, 0.02);
-            const palm = new THREE.Mesh(palmGeo, smplxMaterial);
-            palm.position.y = -0.035;
-            handRoot.add(palm);
-
-            const fingerJoints = [];
-            const fingerOffsets = [-0.022, -0.011, 0.0, 0.011, 0.022];
-
-            for (let f = 0; f < 5; f++) {
-                const isThumb = f === 0;
-                const mcp = new THREE.Group();
-                mcp.position.set(isThumb ? (side * -0.028) : fingerOffsets[f], isThumb ? -0.02 : -0.07, 0);
-
-                const p1Geo = new THREE.CylinderGeometry(0.005, 0.0042, 0.024, 10);
-                p1Geo.translate(0, -0.012, 0);
-                const p1 = new THREE.Mesh(p1Geo, accentMaterial);
-                mcp.add(p1);
-
-                const pip = new THREE.Group();
-                pip.position.set(0, -0.024, 0);
-                mcp.add(pip);
-
-                const p2Geo = new THREE.CylinderGeometry(0.0042, 0.0036, 0.018, 10);
-                p2Geo.translate(0, -0.009, 0);
-                const p2 = new THREE.Mesh(p2Geo, accentMaterial);
-                pip.add(p2);
-
-                const dip = new THREE.Group();
-                dip.position.set(0, -0.018, 0);
-                pip.add(dip);
-
-                const p3Geo = new THREE.CylinderGeometry(0.0036, 0.0028, 0.014, 10);
-                p3Geo.translate(0, -0.007, 0);
-                const p3 = new THREE.Mesh(p3Geo, accentMaterial);
-                dip.add(p3);
-
-                handRoot.add(mcp);
-                fingerJoints.push({ mcp, pip, dip });
+      // 2. Update ARKit Facial Action Units (Eyebrows, Eyes, Mouth)
+      if (frame.blendshapes) {
+        for (let i = 0; i < morphMeshes.length; i++) {
+          const mesh = morphMeshes[i];
+          for (const [shapeName, weight] of Object.entries(frame.blendshapes)) {
+            const index = mesh.morphTargetDictionary[shapeName];
+            if (index !== undefined) {
+              mesh.morphTargetInfluences[index] = weight;
             }
-
-            return { root: handRoot, fingers: fingerJoints };
+          }
         }
+      }
+    };
 
-        function createArmChain(isLeft) {
-            const side = isLeft ? -1 : 1;
-            const shoulder = new THREE.Group();
-            shoulder.position.set(side * 0.25, 0.18, 0);
-            spine2.add(shoulder);
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
 
-            const upperArmGeo = new THREE.CylinderGeometry(0.048, 0.042, 0.28, 20);
-            upperArmGeo.translate(0, -0.14, 0);
-            const upperArm = new THREE.Mesh(upperArmGeo, smplxMaterial);
-            shoulder.add(upperArm);
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
 
-            const elbow = new THREE.Group();
-            elbow.position.set(0, -0.28, 0);
-            shoulder.add(elbow);
-
-            const forearmGeo = new THREE.CylinderGeometry(0.042, 0.035, 0.26, 20);
-            forearmGeo.translate(0, -0.13, 0);
-            const forearm = new THREE.Mesh(forearmGeo, smplxMaterial);
-            elbow.add(forearm);
-
-            const wrist = new THREE.Group();
-            wrist.position.set(0, -0.26, 0);
-            elbow.add(wrist);
-
-            const manoHand = createMANOHand(isLeft);
-            wrist.add(manoHand.root);
-
-            return { shoulder, elbow, wrist, mano: manoHand };
-        }
-
-        const leftArm = createArmChain(true);
-        const rightArm = createArmChain(false);
-
-        // Sign Motion Playback
-        let isSigning = false;
-        let progress = 0;
-        let totalProgress = 120;
-        let isQuestion = false;
-        let isNegation = false;
-
-        function startSignAnimation(promptText) {
-            isSigning = true;
-            progress = 0;
-            isQuestion = promptText.includes("?") || promptText.includes("ወይስ") || promptText.includes("የት");
-            isNegation = promptText.includes("አል") || promptText.includes("አይ") || promptText.toLowerCase().includes("not");
-        }
-
-        function applyPreset(text, lang) {
-            document.getElementById('text-input').value = text;
-            document.getElementById('lang-select').value = lang;
-            startSignAnimation(text);
-        }
-
-        document.getElementById('btn-generate').addEventListener('click', () => {
-            const val = document.getElementById('text-input').value.trim();
-            if (val) startSignAnimation(val);
-        });
-
-        const clock = new THREE.Clock();
-        function renderLoop() {
-            requestAnimationFrame(renderLoop);
-            const elapsed = clock.getElapsedTime();
-
-            if (isSigning) {
-                progress++;
-                const phase = (progress / totalProgress) * Math.PI * 4;
-
-                // SMPL-X Joint Kinematics
-                leftArm.shoulder.rotation.x = -0.7 + Math.sin(phase) * 0.35;
-                leftArm.shoulder.rotation.z = 0.25 - Math.cos(phase * 0.5) * 0.15;
-                leftArm.elbow.rotation.x = -0.85 - Math.abs(Math.sin(phase)) * 0.5;
-
-                rightArm.shoulder.rotation.x = -0.8 - Math.cos(phase) * 0.4;
-                rightArm.shoulder.rotation.z = -0.25 + Math.sin(phase * 0.5) * 0.15;
-                rightArm.elbow.rotation.x = -0.9 - Math.abs(Math.cos(phase)) * 0.5;
-
-                // MANO Finger Articulation
-                const fingerCurl = Math.abs(Math.sin(phase * 2)) * 0.85;
-                leftArm.mano.fingers.forEach(f => {
-                    f.mcp.rotation.x = fingerCurl;
-                    f.pip.rotation.x = fingerCurl * 0.8;
-                    f.dip.rotation.x = fingerCurl * 0.6;
-                });
-                rightArm.mano.fingers.forEach(f => {
-                    f.mcp.rotation.x = fingerCurl * 0.9;
-                    f.pip.rotation.x = fingerCurl * 0.8;
-                    f.dip.rotation.x = fingerCurl * 0.6;
-                });
-
-                // FLAME Facial Blendshapes
-                if (isQuestion) {
-                    leftBrow.position.y = 0.035 + 0.022 * Math.sin(progress * 0.1);
-                    rightBrow.position.y = 0.035 + 0.022 * Math.sin(progress * 0.1);
-                } else if (isNegation) {
-                    headGroup.rotation.y = Math.sin(progress * 0.3) * 0.25;
-                } else {
-                    headGroup.rotation.y = 0;
-                    leftBrow.position.y = 0.035;
-                    rightBrow.position.y = 0.035;
-                }
-
-                mouth.scale.set(1.0, 1.0 + Math.abs(Math.sin(phase * 2)) * 2.8, 1.0);
-
-                if (progress >= totalProgress) {
-                    isSigning = false;
-                    leftBrow.position.y = 0.035;
-                    rightBrow.position.y = 0.035;
-                    headGroup.rotation.y = 0;
-                }
-            } else {
-                pelvis.position.y = 0.95 + 0.0025 * Math.sin(elapsed * 2);
-                headGroup.position.y = 0.12 + 0.0025 * Math.sin(elapsed * 2);
-            }
-
-            controls.update();
-            renderer.render(scene, camera);
-        }
-        renderLoop();
-
-        window.addEventListener('resize', () => {
-            const w = canvas.clientWidth;
-            const h = canvas.clientHeight;
-            camera.aspect = w / h;
-            camera.updateProjectionMatrix();
-            renderer.setSize(w, h, false);
-        });
-
-        setTimeout(() => startSignAnimation("መድኃኒቱን የምወስደው ከምግብ በፊት ነው ወይስ በኋላ?"), 600);
-    </script>
+    window.onload = init;
+  </script>
 </body>
 </html>
