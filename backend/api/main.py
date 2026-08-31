@@ -96,11 +96,14 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
 # Mount static assets for web-client and shared-components
 web_client_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "mobile", "web-client"))
 shared_comp_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "mobile", "shared-components"))
+avatar_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "avatar"))
 
 if os.path.exists(web_client_dir):
     app.mount("/client", StaticFiles(directory=web_client_dir), name="client")
 if os.path.exists(shared_comp_dir):
     app.mount("/shared-components", StaticFiles(directory=shared_comp_dir), name="shared_components")
+if os.path.exists(avatar_dir):
+    app.mount("/avatar", StaticFiles(directory=avatar_dir, html=True), name="avatar")
 
 
 @app.get("/app", response_class=HTMLResponse)
@@ -110,9 +113,10 @@ async def get_product_app():
     if os.path.exists(index_path):
         with open(index_path, "r", encoding="utf-8") as f:
             content = f.read()
-            content = content.replace('href="styles.css"', 'href="/client/styles.css"')
-            content = content.replace('src="avatar_embed.js"', 'src="/client/avatar_embed.js"')
-            content = content.replace('src="app.js"', 'src="/client/app.js"')
+            import time
+            content = content.replace('href="styles.css"', f'href="/client/styles.css?v={int(time.time())}"')
+            content = content.replace('src="avatar_embed.js"', f'src="/client/avatar_embed.js?v={int(time.time())}"')
+            content = content.replace('src="app.js"', f'src="/client/app.js?v={int(time.time())}"')
             content = content.replace('src="../shared-components/tereguwami_sdk.js"', 'src="/shared-components/tereguwami_sdk.js"')
             content = content.replace('src="../shared-components/state_store.js"', 'src="/shared-components/state_store.js"')
             return HTMLResponse(content=content)

@@ -351,7 +351,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const senderSpan = document.createElement("span");
         senderSpan.className = "msg-sender";
-        senderSpan.textContent = sender === "deaf_signer" ? "Signer (ESL):" : "Hearing Interlocutor:";
+        senderSpan.textContent = sender === "deaf_signer" ? "Signer (EthSL · አማርኛ)" : "Clinician";
 
         const bodySpan = document.createElement("span");
         bodySpan.className = "msg-body";

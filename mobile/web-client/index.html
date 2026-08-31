@@ -1,16 +1,20 @@
 <!DOCTYPE html>
 <html lang="am">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ተርጓሚ — Tereguwami | Two-Way Ethiopian Sign Language AI Platform</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+Ethiopic:wght@400;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+Ethiopic:wght@400;600;700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <!-- Three.js CDN for embedded generative avatar -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
+
 <body>
     <!-- Top Navigation Bar -->
     <header class="app-header">
@@ -19,8 +23,8 @@
                 <span class="eth-flag-accent"></span>
                 <span class="brand-name">ተርጓሚ</span>
             </div>
-            <span class="brand-sub">Tereguwami AI</span>
-            <span class="live-pill" id="connection-status">● 9 Layers Active</span>
+
+            <span class="live-pill" id="connection-status" style="display:none"></span>
         </div>
 
         <div class="header-controls">
@@ -47,7 +51,9 @@
 
             <!-- High-Stakes Guardrail Toggle -->
             <div class="control-item toggle-item">
-                <label for="toggle-high-stakes" title="Enforces strict grounding and human verification for medical/court sessions">Clinical / Legal Guard</label>
+                <label for="toggle-high-stakes"
+                    title="Enforces strict grounding and human verification for medical/court sessions">Clinical / Legal
+                    Guard</label>
                 <input type="checkbox" id="toggle-high-stakes">
             </div>
 
@@ -58,9 +64,8 @@
             <button class="nav-btn" data-tab="governance" id="btn-tab-governance">Governance</button>
             <button class="nav-btn" data-tab="leaderboard" id="btn-tab-leaderboard">Leaderboard</button>
 
-            <!-- User Auth Profile Badge -->
             <div class="user-profile-badge" id="user-badge" title="Signer Account Profile">
-                <span class="user-avatar-icon">👤</span>
+                <span class="user-avatar-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
                 <span id="user-display-name">Guest Signer</span>
             </div>
         </div>
@@ -75,16 +80,17 @@
                 <div class="duplex-pane signer-pane">
                     <div class="pane-header">
                         <div class="pane-title">
-                            <span class="role-icon">✋</span>
+
                             <div>
                                 <h2>Deaf Signer Input</h2>
-                                <p>Live MediaPipe 543 3D Landmark & Non-Manual Marker Tracking</p>
+
                             </div>
                         </div>
                         <div class="pane-actions">
                             <button id="btn-toggle-camera" class="action-btn">Start Camera</button>
                             <button id="btn-sim-sign" class="action-btn secondary">Simulate Sign</button>
-                            <button id="btn-snap-frame" class="action-btn tertiary" title="Capture single frame landmark extraction">📷 Snap Frame</button>
+                            <button id="btn-snap-frame" class="action-btn tertiary"
+                                title="Capture single frame landmark extraction"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Snap Frame</button>
                         </div>
                     </div>
 
@@ -92,7 +98,7 @@
                     <div class="camera-viewport-container">
                         <video id="camera-feed" autoplay playsinline muted></video>
                         <canvas id="landmark-canvas"></canvas>
-                        
+
                         <div class="camera-overlay-badge" id="camera-badge">
                             <span class="tracking-dot"></span> 3D Pose + Hands + Face Mesh Active
                         </div>
@@ -101,11 +107,15 @@
                         <div class="au-hud">
                             <div class="au-item">
                                 <span class="au-label">Eyebrows (AU1/2)</span>
-                                <div class="au-bar"><div id="au-bar-eyebrow" class="au-fill" style="width: 25%"></div></div>
+                                <div class="au-bar">
+                                    <div id="au-bar-eyebrow" class="au-fill" style="width: 25%"></div>
+                                </div>
                             </div>
                             <div class="au-item">
                                 <span class="au-label">Mouth Open</span>
-                                <div class="au-bar"><div id="au-bar-mouth" class="au-fill" style="width: 15%"></div></div>
+                                <div class="au-bar">
+                                    <div id="au-bar-mouth" class="au-fill" style="width: 15%"></div>
+                                </div>
                             </div>
                             <div class="au-item">
                                 <span class="au-label">Head Tilt</span>
@@ -124,12 +134,13 @@
 
                         <div class="translation-text-box">
                             <p id="live-translated-text" class="translated-text">ዶክተር ላለፉት ሦስት ቀናት ብርቱ የራስ ምታት አለኝ።</p>
-                            <p id="sub-translated-text" class="sub-translated-text">Doctor, I have had a severe headache for the past three days.</p>
+                            <p id="sub-translated-text" class="sub-translated-text">Doctor, I have had a severe headache
+                                for the past three days.</p>
                         </div>
 
                         <div class="output-actions">
-                            <button id="btn-vocalize" class="speak-btn">🔊 Read Aloud to Hearing Interlocutor</button>
-                            <span id="clarification-alert" class="clarification-pill hidden">⚠️ Low Confidence: Requesting Signer Clarification</span>
+                            <button id="btn-vocalize" class="speak-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 5px;"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>Read Aloud</button>
+                            <span id="clarification-alert" class="clarification-pill hidden"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Low Confidence: Requesting Clarification</span>
                         </div>
                     </div>
                 </div>
@@ -138,10 +149,10 @@
                 <div class="duplex-pane avatar-pane">
                     <div class="pane-header">
                         <div class="pane-title">
-                            <span class="role-icon">👤</span>
+
                             <div>
-                                <h2>Hearing Interlocutor & 3D Avatar</h2>
-                                <p>Spoken/Typed Words Synthesized into Continuous ESL Signs</p>
+                                <h2>Sign Synthesis Avatar</h2>
+                                <p>Speech & Text to Continuous EthSL</p>
                             </div>
                         </div>
                         <div class="pane-actions">
@@ -165,9 +176,11 @@
                     <!-- Hearing User Input Box -->
                     <div class="hearing-input-card">
                         <div class="hearing-input-row">
-                            <button id="btn-mic-input" class="mic-btn" title="Speak through microphone">🎤</button>
-                            <input type="text" id="hearing-text-input" placeholder="Type response in Amharic, Afaan Oromo, or English..." value="መድኃኒቱን ከምግብ በኋላ ይውሰዱ።">
-                            <button id="btn-send-to-avatar" class="send-btn">Sign ➔</button>
+                            <button id="btn-mic-input" class="mic-btn" title="Speak through microphone"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>
+                            <input type="text" id="hearing-text-input"
+                                placeholder="Type response in Amharic, Afaan Oromo, or English..."
+                                value="መድኃኒቱን ከምግብ በኋላ ይውሰዱ።">
+                            <button id="btn-send-to-avatar" class="send-btn">Sign <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-left: 2px;"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
                         </div>
                         <div class="preset-chips">
                             <span class="chip-label">Quick Replies:</span>
@@ -182,16 +195,16 @@
 
             <!-- Live Shared Conversation Transcript Strip -->
             <div class="conversation-transcript-strip">
-                <div class="transcript-title">Real-Time Dialogue History</div>
+                <div class="transcript-title">Dialogue Transcript</div>
                 <div class="messages-container" id="messages-container">
                     <div class="msg-bubble signer">
-                        <span class="msg-sender">Signer (ESL ➔ አማርኛ):</span>
+                        <span class="msg-sender">Signer (EthSL · አማርኛ)</span>
                         <span class="msg-body">ዶክተር ላለፉት ሦስት ቀናት ብርቱ የራስ ምታት አለኝ።</span>
                         <span class="msg-time">14:20:12</span>
                     </div>
                     <div class="msg-bubble hearing">
-                        <span class="msg-sender">Doctor (Hearing):</span>
-                        <span class="msg-body">መድኃኒቱን ከምግብ በኋላ ይውሰዱ። (Avatar Signed)</span>
+                        <span class="msg-sender">Clinician</span>
+                        <span class="msg-body">መድኃኒቱን ከምግብ በኋላ ይውሰዱ።</span>
                         <span class="msg-time">14:20:25</span>
                     </div>
                 </div>
@@ -203,13 +216,15 @@
             <div class="feature-pane-wrapper">
                 <div class="feature-intro">
                     <h2>Personal Sign Enrollment Studio (§8.6)</h2>
-                    <p>Teach Tereguwami unique family signs, dialectal variations, or regional names in 1–5 quick camera demonstrations. Embeddings are stored privately on-device in a 128-dimensional metric space.</p>
+                    <p>Teach Tereguwami unique family signs, dialectal variations, or regional names in 1–5 quick camera
+                        demonstrations. Embeddings are stored privately on-device in a 128-dimensional metric space.</p>
                 </div>
                 <div class="personalization-grid">
                     <div class="enroll-form-card">
                         <h3>Enroll New Personal Sign</h3>
                         <label for="enroll-sign-name">Sign Name / Concept Label</label>
-                        <input type="text" id="enroll-sign-name" placeholder="e.g. FAMILY_NICKNAME_ABEBE" value="FAMILY_NICKNAME_ABEBE">
+                        <input type="text" id="enroll-sign-name" placeholder="e.g. FAMILY_NICKNAME_ABEBE"
+                            value="FAMILY_NICKNAME_ABEBE">
 
                         <div class="enroll-steps">
                             <div class="step-box">
@@ -227,7 +242,8 @@
                         </div>
 
                         <div class="enroll-actions">
-                            <button id="btn-record-exemplar" class="action-btn">Capture Exemplar (Simulate 3-Shot)</button>
+                            <button id="btn-record-exemplar" class="action-btn">Capture Exemplar (Simulate
+                                3-Shot)</button>
                             <button id="btn-save-enrollment" class="action-btn primary">Save to Profile</button>
                         </div>
                         <div id="enroll-status" class="status-msg"></div>
@@ -261,7 +277,8 @@
             <div class="feature-pane-wrapper">
                 <div class="feature-intro">
                     <h2>Silent-Speech Subvocalization & Companion Band (§8.7, §8.8)</h2>
-                    <p>Decodes non-invasive jaw/face sEMG neuromuscular signals for silent or camera-free communication in low-light and private settings (AlterEgo lineage).</p>
+                    <p>Decodes non-invasive jaw/face sEMG neuromuscular signals for silent or camera-free communication
+                        in low-light and private settings (AlterEgo lineage).</p>
                 </div>
                 <div class="silent-speech-grid">
                     <div class="emg-monitor-card">
@@ -277,10 +294,10 @@
                         <h3>Wristband Micro-Gesture Controller</h3>
                         <p>Companion wrist-worn band commands via BLE:</p>
                         <div class="gesture-triggers">
-                            <button class="wrist-btn" data-cmd="START_TRANSLATION">Double Tap ➔ Start Listening</button>
-                            <button class="wrist-btn" data-cmd="REPEAT_LAST">Flick Wrist ➔ Repeat Aloud</button>
-                            <button class="wrist-btn" data-cmd="CLARIFY">Thumb Snap ➔ Ask Clarification</button>
-                            <button class="wrist-btn" data-cmd="SWITCH_LANG">Palm Up ➔ Switch Language</button>
+                            <button class="wrist-btn" data-cmd="START_TRANSLATION">Double Tap → Start Listening</button>
+                            <button class="wrist-btn" data-cmd="REPEAT_LAST">Flick Wrist → Repeat Aloud</button>
+                            <button class="wrist-btn" data-cmd="CLARIFY">Thumb Snap → Ask Clarification</button>
+                            <button class="wrist-btn" data-cmd="SWITCH_LANG">Palm Up → Switch Language</button>
                         </div>
                         <div id="wearable-status" class="status-msg">BLE Peripheral: Connected (1000 Hz ADC)</div>
                     </div>
@@ -293,7 +310,8 @@
             <div class="feature-pane-wrapper">
                 <div class="feature-intro">
                     <h2>Deaf Community Ethical Governance Portal (§9, §17)</h2>
-                    <p>Tereguwami is governed in active partnership with the Ethiopian Deaf community under the oversight of the Standing Deaf-Led Advisory Board.</p>
+                    <p>Tereguwami is governed in active partnership with the Ethiopian Deaf community under the
+                        oversight of the Standing Deaf-Led Advisory Board.</p>
                 </div>
                 <div class="governance-grid">
                     <div class="consent-check-card">
@@ -302,16 +320,20 @@
                         <input type="text" id="gov-signer-id" value="SIGNER_14">
                         <div class="gov-actions">
                             <button id="btn-verify-consent" class="action-btn">Verify Consent Status</button>
-                            <button id="btn-withdraw-consent" class="action-btn danger">Withdraw Consent & Purge Video</button>
+                            <button id="btn-withdraw-consent" class="action-btn danger">Withdraw Consent & Purge
+                                Video</button>
                         </div>
                         <div id="gov-status" class="status-msg"></div>
                     </div>
                     <div class="charter-summary-card">
                         <h3>Advisory Board Binding Veto Protocol</h3>
                         <ul>
-                            <li><strong>Unconditional Right to Withdraw:</strong> Signers can withdraw their data at any time. Raw videos are purged immediately.</li>
-                            <li><strong>Deaf Majority Governance:</strong> 70%+ Deaf representation with binding veto power over commercialization.</li>
-                            <li><strong>Zero Raw Video Leakage:</strong> Edge personalization via federated learning ensures video never leaves user devices.</li>
+                            <li><strong>Unconditional Right to Withdraw:</strong> Signers can withdraw their data at any
+                                time. Raw videos are purged immediately.</li>
+                            <li><strong>Deaf Majority Governance:</strong> 70%+ Deaf representation with binding veto
+                                power over commercialization.</li>
+                            <li><strong>Zero Raw Video Leakage:</strong> Edge personalization via federated learning
+                                ensures video never leaves user devices.</li>
                         </ul>
                     </div>
                 </div>
@@ -323,13 +345,14 @@
             <div class="feature-pane-wrapper">
                 <div class="feature-intro">
                     <h2>Ethiopian Sign Language Public Benchmark Leaderboard (§10, §15)</h2>
-                    <p>Standardized evaluation rankings across 60–100 signer-independent continuous test splits. Tracking Word Error Rate, BLEU-4 translation fluency, and non-manual marker F1.</p>
+                    <p>Standardized evaluation rankings across 60–100 signer-independent continuous test splits.
+                        Tracking Word Error Rate, BLEU-4 translation fluency, and non-manual marker F1.</p>
                 </div>
                 <div class="leaderboard-grid">
                     <div class="leaderboard-table-card">
                         <div class="card-header-flex">
                             <h3>Verified SOTA Model Rankings</h3>
-                            <button id="btn-refresh-leaderboard" class="action-btn small">🔄 Refresh</button>
+                            <button id="btn-refresh-leaderboard" class="action-btn small"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>Refresh</button>
                         </div>
                         <div class="table-responsive">
                             <table class="leaderboard-table" id="leaderboard-table">
@@ -356,7 +379,8 @@
                         <h3>Submit Model Evaluation</h3>
                         <form id="leaderboard-form">
                             <label for="sub-model-name">Model Name</label>
-                            <input type="text" id="sub-model-name" placeholder="e.g. Hierarchical Graph Transformer" required>
+                            <input type="text" id="sub-model-name" placeholder="e.g. Hierarchical Graph Transformer"
+                                required>
 
                             <label for="sub-org">Organization / Institution</label>
                             <input type="text" id="sub-org" placeholder="e.g. Addis Ababa University / AI Lab" required>
@@ -386,7 +410,8 @@
                                 </div>
                             </div>
 
-                            <button type="submit" id="btn-submit-benchmark" class="action-btn primary full-width">Submit to Public Leaderboard</button>
+                            <button type="submit" id="btn-submit-benchmark" class="action-btn primary full-width">Submit
+                                to Public Leaderboard</button>
                         </form>
                         <div id="sub-status" class="status-msg"></div>
                     </div>
@@ -400,21 +425,22 @@
         <div class="modal-card">
             <div class="modal-header">
                 <h3 id="auth-modal-title">Sign In / Register Profile</h3>
-                <button class="modal-close-btn" id="btn-close-auth">✕</button>
+                <button class="modal-close-btn" id="btn-close-auth"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
             </div>
             <div class="modal-body">
                 <div class="auth-toggle-tabs">
                     <button class="auth-tab-btn active" id="tab-auth-login">Sign In</button>
                     <button class="auth-tab-btn" id="tab-auth-register">Create Account</button>
                 </div>
-                
+
                 <!-- Login Form -->
                 <form id="form-auth-login">
                     <label for="login-username">Username or Email</label>
                     <input type="text" id="login-username" value="signer_demo" required>
                     <label for="login-password">Password</label>
                     <input type="password" id="login-password" value="SignerPass123!" required>
-                    <button type="submit" class="action-btn primary full-width" style="margin-top: 1rem;">Sign In</button>
+                    <button type="submit" class="action-btn primary full-width" style="margin-top: 1rem;">Sign
+                        In</button>
                 </form>
 
                 <!-- Register Form -->
@@ -432,7 +458,8 @@
                         <option value="deaf_advisory_board">Deaf Advisory Board Representative</option>
                         <option value="institutional_client">Healthcare / Court Staff</option>
                     </select>
-                    <button type="submit" class="action-btn primary full-width" style="margin-top: 1rem;">Create Account</button>
+                    <button type="submit" class="action-btn primary full-width" style="margin-top: 1rem;">Create
+                        Account</button>
                 </form>
 
                 <div id="auth-status" class="status-msg"></div>
@@ -446,4 +473,5 @@
     <script src="avatar_embed.js"></script>
     <script src="app.js"></script>
 </body>
+
 </html>
