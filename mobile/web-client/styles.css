@@ -1445,3 +1445,29 @@ select:focus {
 ::-webkit-scrollbar-thumb:hover {
     background: var(--sit-primary);
 }
+
+/* ── Button State Transitions ─────────────────────────────────────────────── */
+#live-translated-text {
+    transition: opacity 0.25s ease;
+}
+
+.confidence-badge {
+    transition: background 0.3s ease, color 0.3s ease;
+}
+
+.action-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.action-btn.danger {
+    background: rgba(185, 28, 28, 0.12);
+    color: #ef5350;
+    border-color: rgba(185, 28, 28, 0.35);
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
