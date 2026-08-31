@@ -101,42 +101,47 @@ class AvatarEmbedScene {
         this.avatarGroup.position.set(0, 0, 0);
         this.scene.add(this.avatarGroup);
 
-        // ── Materials & Shaders ──────────────────────────────────────────────
-        // Realistic Melanin Warm Brown Skin
-        const skinMaterial = new THREE.MeshStandardMaterial({
-            color: 0x734327,
-            roughness: 0.48,
-            metalness: 0.08,
-            bumpScale: 0.002
+        // ── PBR Materials & Shaders (Photorealistic Reference Match) ─────────
+        // Warm Ethiopian Skin with Micro-Pore Subsurface Scattering
+        const skinMaterial = new THREE.MeshPhysicalMaterial({
+            color: 0x8b5e3c,
+            roughness: 0.42,
+            metalness: 0.02,
+            clearcoat: 0.08,
+            clearcoatRoughness: 0.6,
+            sheen: 0.15,
+            sheenColor: new THREE.Color(0xc28060)
         });
 
-        // Professional Dark Charcoal Tailored Blazer (High Contrast against hands)
+        // Charcoal-Grey Mandarin-Collar Blazer (Reference Match)
         const suitMaterial = new THREE.MeshStandardMaterial({
-            color: 0x16191d,
-            roughness: 0.75,
+            color: 0x3d4146,
+            roughness: 0.68,
+            metalness: 0.08
+        });
+
+        // Mandarin Inner Collar & Lapel
+        const innerShirtMaterial = new THREE.MeshStandardMaterial({
+            color: 0x2c2e32,
+            roughness: 0.78
+        });
+
+        // Tight Micro-Cornrow Braided Hair
+        const hairMaterial = new THREE.MeshStandardMaterial({
+            color: 0x1a1512,
+            roughness: 0.58,
             metalness: 0.12
         });
 
-        // Dark Inner Collar / Turtleneck
-        const innerShirtMaterial = new THREE.MeshStandardMaterial({
-            color: 0x0c0e10,
-            roughness: 0.85
-        });
-
-        // Black Braided Hair
-        const hairMaterial = new THREE.MeshStandardMaterial({
-            color: 0x141110,
-            roughness: 0.65,
-            metalness: 0.15
-        });
-
-        // Luminous Cyan Emissive Necklace Material
+        // Luminous Cyan LED Collar Ring (Integrated into Mandarin Collar)
         const cyanGlowMaterial = new THREE.MeshStandardMaterial({
             color: 0x00e5ff,
-            emissive: 0x00c4e6,
-            emissiveIntensity: 0.85,
-            roughness: 0.2,
-            metalness: 0.4
+            emissive: 0x00d4f5,
+            emissiveIntensity: 1.2,
+            roughness: 0.12,
+            metalness: 0.35,
+            transparent: true,
+            opacity: 0.95
         });
 
         // Sensor Hardware Material (Silver / Ceramic)
@@ -311,10 +316,12 @@ class AvatarEmbedScene {
         head.add(nose);
 
         // Natural Full Lips & Mouth Opening
-        const lipMaterial = new THREE.MeshStandardMaterial({
-            color: 0x6e3828,
-            roughness: 0.35,
-            metalness: 0.05
+        const lipMaterial = new THREE.MeshPhysicalMaterial({
+            color: 0x7a4538,
+            roughness: 0.32,
+            metalness: 0.02,
+            clearcoat: 0.12,
+            clearcoatRoughness: 0.4
         });
 
         const mouthGroup = new THREE.Group();
