@@ -15,15 +15,15 @@ scikit-learn>=1.5.0
 pandas>=2.2.0
 
 # Computer Vision & Landmark Extraction
-# mediapipe>=0.10.14
-# opencv-python>=4.10.0
+mediapipe>=0.10.14
+opencv-python>=4.10.0
 
 # Deep Learning Frameworks
-# torch>=2.3.0
-# torchvision>=0.18.0
-# transformers>=4.42.0
-# datasets>=2.20.0
-# tokenizers>=0.19.0
+torch>=2.2.0
+torchvision>=0.17.0
+transformers>=4.40.0
+datasets>=2.19.0
+tokenizers>=0.19.0
 
 # Asynchronous Database & Relational Storage
 sqlalchemy>=2.0.0
