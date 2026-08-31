@@ -136,6 +136,11 @@ document.addEventListener("DOMContentLoaded", () => {
             if (cameraBadge) { cameraBadge.style.display = "none"; }
             cancelAnimationFrame(renderFrameId);
             ctx.clearRect(0, 0, landmarkCanvas.width, landmarkCanvas.height);
+            
+            // Reset Real-Time Action Unit HUD to baseline
+            auBarEyebrow.style.width = "25%";
+            auBarMouth.style.width = "15%";
+            auValHead.textContent = "0.0°";
         }
     });
 
@@ -356,6 +361,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Trigger avatar sign-back animation (visual integration)
         if (avatarScene && typeof avatarScene.playGeneratedSigningStream === "function") {
             avatarScene.playGeneratedSigningStream({
+                prompt: translatedText,
                 fps: 30,
                 frames: Array(45).fill({
                     blendshapes: {
