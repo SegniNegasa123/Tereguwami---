@@ -567,9 +567,13 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // 14. Signer Profile & Auth Modal
+    // 14. Signer Profile & Portal Dropdown
     const userBadge = document.getElementById("user-badge");
     const userDisplayName = document.getElementById("user-display-name");
+    const portalMenuWrapper = document.getElementById("portal-menu-wrapper");
+    const portalDropdown = document.getElementById("portal-dropdown");
+    const portalSubStatus = document.getElementById("portal-sub-status");
+    const btnPortalAuth = document.getElementById("btn-portal-auth");
     const authModal = document.getElementById("auth-modal");
     const btnCloseAuth = document.getElementById("btn-close-auth");
     const tabAuthLogin = document.getElementById("tab-auth-login");
@@ -583,12 +587,44 @@ document.addEventListener("DOMContentLoaded", () => {
     if (savedUser) {
         try {
             const u = JSON.parse(savedUser);
-            userDisplayName.textContent = `${u.username} (${u.role})`;
+            if (userDisplayName) userDisplayName.textContent = u.username || "Portal";
+            if (portalSubStatus) portalSubStatus.textContent = `${u.username} (${u.role})`;
         } catch (e) {}
     }
 
-    if (userBadge) {
-        userBadge.addEventListener("click", () => {
+    // Toggle Portal Dropdown
+    if (userBadge && portalDropdown) {
+        userBadge.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const isClosed = portalDropdown.classList.contains("hidden");
+            portalDropdown.classList.toggle("hidden", !isClosed);
+            if (portalMenuWrapper) portalMenuWrapper.classList.toggle("open", isClosed);
+        });
+    }
+
+    // Close Dropdown when clicking outside
+    document.addEventListener("click", (e) => {
+        if (portalMenuWrapper && !portalMenuWrapper.contains(e.target)) {
+            if (portalDropdown) portalDropdown.classList.add("hidden");
+            portalMenuWrapper.classList.remove("open");
+        }
+    });
+
+    // Dropdown Items: Close dropdown when clicked
+    if (portalDropdown) {
+        portalDropdown.querySelectorAll(".dropdown-item.nav-btn").forEach(item => {
+            item.addEventListener("click", () => {
+                portalDropdown.classList.add("hidden");
+                if (portalMenuWrapper) portalMenuWrapper.classList.remove("open");
+            });
+        });
+    }
+
+    // Open Auth Modal from Dropdown
+    if (btnPortalAuth) {
+        btnPortalAuth.addEventListener("click", () => {
+            if (portalDropdown) portalDropdown.classList.add("hidden");
+            if (portalMenuWrapper) portalMenuWrapper.classList.remove("open");
             authModal.classList.remove("hidden");
         });
     }
@@ -635,8 +671,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (!resp.ok) throw new Error("Invalid credentials");
                 const data = await resp.json();
                 localStorage.setItem("tereguwami_token", data.access_token);
-                localStorage.setItem("tereguwami_user", JSON.stringify(data));
-                userDisplayName.textContent = `${data.username} (${data.role})`;
+                if (userDisplayName) userDisplayName.textContent = data.username || "Portal";
+                if (portalSubStatus) portalSubStatus.textContent = `${data.username} (${data.role})`;
                 authStatusEl.textContent = "✓ Authentication successful!";
                 authStatusEl.style.color = "#00e676";
                 setTimeout(() => authModal.classList.add("hidden"), 800);

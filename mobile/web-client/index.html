@@ -57,16 +57,40 @@
                 <input type="checkbox" id="toggle-high-stakes">
             </div>
 
-            <!-- Tab Buttons -->
+            <!-- Primary Interaction Tabs -->
             <button class="nav-btn active" data-tab="duplex-chat" id="btn-tab-chat">Conversation</button>
-            <button class="nav-btn" data-tab="personalization" id="btn-tab-personalize">Custom Signs</button>
             <button class="nav-btn" data-tab="silent-speech" id="btn-tab-silent">Silent Speech</button>
-            <button class="nav-btn" data-tab="governance" id="btn-tab-governance">Governance</button>
-            <button class="nav-btn" data-tab="leaderboard" id="btn-tab-leaderboard">Leaderboard</button>
 
-            <div class="user-profile-badge" id="user-badge" title="Signer Account Profile">
-                <span class="user-avatar-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
-                <span id="user-display-name">Guest Signer</span>
+            <!-- Signer Portal Dropdown (Account, Custom Signs, Governance, Leaderboard) -->
+            <div class="portal-dropdown-wrapper" id="portal-menu-wrapper">
+                <button class="user-profile-badge" id="user-badge" title="Signer Portal & Subsystems" type="button">
+                    <span class="user-avatar-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+                    <span id="user-display-name">Portal</span>
+                    <svg class="portal-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="portal-dropdown-menu hidden" id="portal-dropdown">
+                    <div class="dropdown-header">
+                        <span class="dropdown-title">Signer Portal</span>
+                        <span class="dropdown-sub" id="portal-sub-status">Guest Session</span>
+                    </div>
+                    <div class="dropdown-divider"></div>
+                    <button class="dropdown-item" id="btn-portal-auth" type="button">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <span>Account &amp; Profile</span>
+                    </button>
+                    <button class="dropdown-item nav-btn" data-tab="personalization" id="btn-tab-personalize" type="button">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                        <span>Custom Signs</span>
+                    </button>
+                    <button class="dropdown-item nav-btn" data-tab="governance" id="btn-tab-governance" type="button">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        <span>Governance</span>
+                    </button>
+                    <button class="dropdown-item nav-btn" data-tab="leaderboard" id="btn-tab-leaderboard" type="button">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.45 1-1 1H7c-.55 0-1-.45-1-1v-2.34"/><path d="M18 14.66V17c0 .55-.45 1-1 1h-2c-.55 0-1-.45-1-1v-2.34"/><path d="M6 2v7a6 6 0 0 0 12 0V2H6z"/></svg>
+                        <span>Leaderboard</span>
+                    </button>
+                </div>
             </div>
         </div>
     </header>
