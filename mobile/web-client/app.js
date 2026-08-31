@@ -139,54 +139,12 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!cameraActive) return;
             frameCount++;
 
+            // Keep canvas clear and unobstructed
             ctx.clearRect(0, 0, landmarkCanvas.width, landmarkCanvas.height);
 
-            const w = landmarkCanvas.width;
-            const h = landmarkCanvas.height;
             const t = frameCount * 0.05;
 
-            // Draw Torso & Pose Skeleton
-            const cx = w * 0.5;
-            const headY = h * 0.28;
-            const lShoulderX = cx - 60;
-            const rShoulderX = cx + 60;
-            const shoulderY = h * 0.42;
-
-            // Animated Hands Signing Motion
-            const lWristX = lShoulderX - 30 + Math.sin(t * 1.5) * 40;
-            const lWristY = shoulderY + 80 + Math.cos(t * 1.5) * 50;
-
-            const rWristX = rShoulderX + 30 - Math.sin(t * 2.0) * 50;
-            const rWristY = shoulderY + 70 + Math.cos(t * 2.0) * 40;
-
-            // Draw Bones
-            ctx.lineWidth = 3;
-            ctx.strokeStyle = "#00e5ff";
-            ctx.beginPath();
-            // Shoulders
-            ctx.moveTo(lShoulderX, shoulderY);
-            ctx.lineTo(rShoulderX, shoulderY);
-            // Left Arm
-            ctx.moveTo(lShoulderX, shoulderY);
-            ctx.lineTo(lShoulderX - 20, shoulderY + 50);
-            ctx.lineTo(lWristX, lWristY);
-            // Right Arm
-            ctx.moveTo(rShoulderX, shoulderY);
-            ctx.lineTo(rShoulderX + 20, shoulderY + 50);
-            ctx.lineTo(rWristX, rWristY);
-            ctx.stroke();
-
-            // Draw Face Oval & Landmark Mesh
-            ctx.fillStyle = "rgba(0, 230, 118, 0.4)";
-            ctx.beginPath();
-            ctx.ellipse(cx, headY, 35, 45, 0, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Draw Hand Joints (21 keypoints each)
-            drawHandLandmarks(ctx, lWristX, lWristY, "#00e676");
-            drawHandLandmarks(ctx, rWristX, rWristY, "#ffca28");
-
-            // Update Real-Time HUD
+            // Update Real-Time Action Unit HUD
             const browLift = 0.2 + Math.abs(Math.sin(t)) * 0.6;
             const mouthOp = 0.1 + Math.abs(Math.cos(t * 1.2)) * 0.4;
             const headTilt = (Math.sin(t * 0.8) * 6.5).toFixed(1);
@@ -199,18 +157,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         render();
-    }
-
-    function drawHandLandmarks(context, x, y, color) {
-        context.fillStyle = color;
-        for (let i = 0; i < 5; i++) {
-            const angle = (i - 2) * 0.35 - Math.PI / 2;
-            const fx = x + Math.cos(angle) * 22;
-            const fy = y + Math.sin(angle) * 22;
-            context.beginPath();
-            context.arc(fx, fy, 3.5, 0, Math.PI * 2);
-            context.fill();
-        }
     }
 
     // 6. Simulate Signing & Live Translation Generation
