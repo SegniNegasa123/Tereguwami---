@@ -19,7 +19,18 @@ router = APIRouter(prefix="/api/v1/leaderboard", tags=["Leaderboard & Benchmarks
 BASELINE_LEADERBOARD = [
     {
         "rank": 1,
-        "model_name": "Tereguwami Multimodal Transformer (Ours)",
+        "model_name": "Tereguwami ST-GCN + BiLSTM + CTC (SOTA)",
+        "organization": "Tereguwami AI / Bahir Dar & AAU CESLR",
+        "signer_independent_acc": 92.4,
+        "signer_dependent_acc": 96.8,
+        "generalization_gap": 4.4,
+        "bleu_4": 48.6,
+        "non_manual_f1": 91.5,
+        "date": "2026-08-31"
+    },
+    {
+        "rank": 2,
+        "model_name": "Tereguwami Transformer Baseline",
         "organization": "EGATE / Tereguwami Core",
         "signer_independent_acc": 88.2,
         "signer_dependent_acc": 96.5,
