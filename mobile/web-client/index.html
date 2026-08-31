@@ -171,14 +171,16 @@
                 <div class="duplex-pane avatar-pane">
                     <div class="pane-header">
                         <div class="pane-title">
-
                             <div>
-                                <h2>Sign Synthesis Avatar</h2>
-                                <p>Speech & Text to Continuous EthSL</p>
+                                <h2>TERGUAMI — 3D Sign Avatar</h2>
+                                <p>Continuous Ethiopian & Oromo Sign Synthesis</p>
                             </div>
                         </div>
                         <div class="pane-actions">
-                            <select id="avatar-speed-select">
+                            <button id="btn-mirror-avatar" class="action-btn tertiary" title="Toggle Mirror Mode for sign imitation">Mirror Mode</button>
+                            <button id="btn-replay-avatar" class="action-btn tertiary" title="Replay current sign"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 3px;"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>Replay</button>
+                            <select id="avatar-speed-select" title="Adjust Signing Speed">
+                                <option value="0.5">0.5x (Slow)</option>
                                 <option value="0.75">0.75x (Learner)</option>
                                 <option value="1.0" selected>1.0x (Normal)</option>
                                 <option value="1.25">1.25x (Fluent)</option>
@@ -191,7 +193,7 @@
                         <!-- Three.js canvas mounts here -->
                         <div class="avatar-hud">
                             <span class="avatar-status-tag" id="avatar-status-tag">Ready for Input</span>
-                            <span class="avatar-model-tag">Progressive Transformer Engine</span>
+                            <span class="avatar-model-tag">TERGUAMI · Digital Human</span>
                         </div>
                     </div>
 

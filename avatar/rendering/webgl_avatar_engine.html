@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Tereguwami — ተርጓሚ | EthSL 3D Avatar</title>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Ethiopic:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <title>TERGUAMI (ተርጓሚ) — 3D Digital Human EthSL Sign Language Avatar</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Noto+Sans+Ethiopic:wght@400;700&family=Plus+Jakarta+Sans:wght@500;700&display=swap" rel="stylesheet">
 
   <script type="importmap">
   {
@@ -18,579 +18,386 @@
   <style>
     :root {
       --cyan:   #00e5ff;
-      --orange: #FE5823;
-      --green:  #AFDE02;
-      --gold:   #EEBE41;
-      --dark:   #060a10;
-      --bg2:    rgba(4,14,26,0.88);
-      --border: rgba(0,229,255,0.22);
+      --gold:   #f59e0b;
+      --dark:   #0f1318;
+      --bg2:    rgba(15, 19, 24, 0.88);
+      --border: rgba(0, 229, 255, 0.25);
     }
-    * { box-sizing:border-box; margin:0; padding:0; }
-    body { background:#060a10; width:100vw; height:100vh; overflow:hidden; font-family:'Poppins',sans-serif; }
-    canvas { display:block; width:100vw!important; height:100vh!important; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--dark); width: 100vw; height: 100vh; overflow: hidden; font-family: 'Plus Jakarta Sans', sans-serif; }
+    canvas { display: block; width: 100vw !important; height: 100vh !important; }
 
     /* Loading */
     #loading {
-      position:fixed; inset:0; z-index:300;
-      background:var(--dark);
-      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px;
-      transition:opacity 0.7s;
+      position: fixed; inset: 0; z-index: 300;
+      background: var(--dark);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+      transition: opacity 0.7s;
     }
-    #loading h1 { font-family:'Noto Sans Ethiopic',sans-serif; color:var(--cyan); font-size:28px; letter-spacing:2px; }
-    #loading p  { font-family:'Share Tech Mono',monospace; color:rgba(0,229,255,0.55); font-size:11px; letter-spacing:3px; text-transform:uppercase; }
-    #load-msg   { font-family:'Share Tech Mono',monospace; color:rgba(255,255,255,0.4); font-size:10px; letter-spacing:2px; min-height:14px; }
-    .prog-outer { width:260px; height:2px; background:rgba(0,229,255,0.1); border-radius:1px; overflow:hidden; }
-    #prog       { height:100%; width:0%; background:var(--cyan); box-shadow:0 0 8px var(--cyan); transition:width 0.2s; }
+    #loading h1 { font-family: 'Noto Sans Ethiopic', sans-serif; color: var(--cyan); font-size: 32px; letter-spacing: 2px; }
+    #loading p  { font-family: 'JetBrains Mono', monospace; color: rgba(0, 229, 255, 0.7); font-size: 11px; letter-spacing: 3px; text-transform: uppercase; }
+    .prog-outer { width: 280px; height: 3px; background: rgba(0, 229, 255, 0.15); border-radius: 2px; overflow: hidden; }
+    #prog       { height: 100%; width: 0%; background: var(--cyan); box-shadow: 0 0 10px var(--cyan); transition: width 0.2s; }
+    #load-msg   { font-family: 'JetBrains Mono', monospace; color: rgba(255, 255, 255, 0.5); font-size: 11px; letter-spacing: 1.5px; }
 
-    /* Top bar */
+    /* Top Bar */
     #top-bar {
-      position:fixed; top:14px; left:50%; transform:translateX(-50%);
-      z-index:100; display:flex; gap:10px; align-items:center; pointer-events:none;
+      position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+      z-index: 100; display: flex; gap: 12px; align-items: center; pointer-events: none;
     }
     .badge {
-      background:var(--bg2); border:1px solid var(--border); border-radius:20px; padding:6px 16px;
-      backdrop-filter:blur(14px); font-family:'Share Tech Mono',monospace;
-      font-size:10px; color:var(--cyan); letter-spacing:1.5px; text-transform:uppercase; white-space:nowrap;
+      background: var(--bg2); border: 1px solid var(--border); border-radius: 20px; padding: 7px 18px;
+      backdrop-filter: blur(16px); font-family: 'JetBrains Mono', monospace;
+      font-size: 11px; color: var(--cyan); letter-spacing: 1.5px; text-transform: uppercase; white-space: nowrap;
     }
-    .dot { width:6px; height:6px; border-radius:50%; background:var(--green); box-shadow:0 0 7px var(--green);
-           display:inline-block; margin-right:7px; animation:blink 2s ease-in-out infinite; }
-    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.25} }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: #00e676; box-shadow: 0 0 8px #00e676; display: inline-block; margin-right: 8px; }
 
-    /* Bottom strip */
+    /* Bottom HUD */
     #bottom {
-      position:fixed; bottom:0; left:0; right:0; z-index:100;
-      background:linear-gradient(0deg,rgba(4,14,26,0.96) 0%,transparent 100%);
-      padding:16px 28px 18px;
-      display:flex; align-items:flex-end; justify-content:space-between;
-      pointer-events:none;
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+      background: linear-gradient(0deg, rgba(15, 19, 24, 0.98) 0%, transparent 100%);
+      padding: 20px 32px;
+      display: flex; align-items: flex-end; justify-content: space-between;
+      pointer-events: none;
     }
-    .geez  { font-family:'Noto Sans Ethiopic',sans-serif; font-size:17px; font-weight:700; color:#fff; }
-    .gloss { font-size:11px; color:rgba(255,255,255,0.4); font-style:italic; margin-top:3px; }
-    #au-strip { display:flex; gap:12px; align-items:flex-end; }
-    .au-item  { display:flex; flex-direction:column; align-items:center; gap:4px; }
-    .au-lbl   { font-family:'Share Tech Mono',monospace; font-size:8px; color:var(--cyan); letter-spacing:1px; }
-    .au-trk   { width:40px; height:3px; background:rgba(255,255,255,0.07); border-radius:2px; overflow:hidden; }
-    .au-f     { height:100%; border-radius:2px; transition:width 0.1s linear; width:0%; }
-    .au-v     { font-family:'Share Tech Mono',monospace; font-size:9px; color:rgba(255,255,255,0.5); }
-
-    /* Sign label */
-    #sign-lbl {
-      position:fixed; top:68px; left:50%; transform:translateX(-50%);
-      z-index:100; font-family:'Share Tech Mono',monospace; font-size:9px;
-      color:rgba(0,229,255,0.45); letter-spacing:2.5px; text-transform:uppercase;
-      pointer-events:none; transition:opacity 0.3s;
+    .geez  { font-family: 'Noto Sans Ethiopic', sans-serif; font-size: 20px; font-weight: 700; color: #ffffff; }
+    .gloss { font-size: 13px; color: rgba(255, 255, 255, 0.5); font-style: italic; margin-top: 4px; }
+    .controls-strip { display: flex; gap: 10px; pointer-events: auto; }
+    .hud-btn {
+      background: rgba(0, 229, 255, 0.1); border: 1px solid var(--border); color: #fff;
+      padding: 6px 14px; border-radius: 6px; font-size: 12px; cursor: pointer; font-family: 'JetBrains Mono', monospace;
+      transition: all 0.2s;
     }
-    #orbit-hint {
-      position:fixed; bottom:90px; right:18px; z-index:100;
-      font-family:'Share Tech Mono',monospace; font-size:9px;
-      color:rgba(255,255,255,0.18); letter-spacing:1px; pointer-events:none;
-    }
+    .hud-btn:hover { background: rgba(0, 229, 255, 0.25); border-color: var(--cyan); }
   </style>
 </head>
 <body>
 
-<!-- Loading -->
 <div id="loading">
   <h1>ተርጓሚ</h1>
-  <p>Tereguwami EthSL Avatar System v3.0</p>
+  <p>TERGUAMI · Digital Human Avatar</p>
   <div class="prog-outer"><div id="prog"></div></div>
-  <div id="load-msg">Building 3D avatar...</div>
+  <div id="load-msg">Building 3D Mesh & MANO Hand Rig...</div>
 </div>
 
-<!-- Top bar -->
 <div id="top-bar">
-  <div class="badge"><span class="dot"></span>EthSL 3D Avatar — Live Signing Mode</div>
-  <div class="badge" id="fps-b">-- FPS</div>
+  <div class="badge"><span class="dot"></span>TERGUAMI — 3D Sign Language Instructor</div>
+  <div class="badge" id="fps-badge">60 FPS</div>
 </div>
-<div id="sign-lbl">Idle — Awaiting Input</div>
 
-<!-- Bottom strip -->
 <div id="bottom">
   <div>
-    <div class="geez"  id="g-text">ጤና ይስጥልኝ</div>
-    <div class="gloss" id="l-text">Hello — EthSL avatar ready</div>
+    <div class="geez" id="g-text">ጤና ይስጥልኝ እንደምን ነዎት?</div>
+    <div class="gloss" id="l-text">Hello / Greetings — EthSL Natural Signing Stance</div>
   </div>
-  <div id="au-strip">
-    <div class="au-item"><div class="au-lbl">AU1</div><div class="au-trk"><div class="au-f" id="au1" style="background:var(--cyan)"></div></div><div class="au-v" id="v1">0.00</div></div>
-    <div class="au-item"><div class="au-lbl">AU2</div><div class="au-trk"><div class="au-f" id="au2" style="background:var(--cyan)"></div></div><div class="au-v" id="v2">0.00</div></div>
-    <div class="au-item"><div class="au-lbl">AU4</div><div class="au-trk"><div class="au-f" id="au4" style="background:var(--orange)"></div></div><div class="au-v" id="v4">0.00</div></div>
-    <div class="au-item"><div class="au-lbl">JAW</div><div class="au-trk"><div class="au-f" id="jaw" style="background:var(--gold)"></div></div><div class="au-v" id="vj">0.00</div></div>
+  <div class="controls-strip">
+    <button class="hud-btn" id="btn-sign-greetings">ሰላምታ (Hello)</button>
+    <button class="hud-btn" id="btn-sign-rx">መድኃኒት (Medicine)</button>
+    <button class="hud-btn" id="btn-sign-repeat">ማብራሪያ (Explain)</button>
+    <button class="hud-btn" id="btn-mirror">Mirror Mode</button>
   </div>
 </div>
-<div id="orbit-hint">🖱 Drag · Scroll to zoom</div>
 
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-// ─── Progress helper ──────────────────────────────────────────────────────────
+// ── Progress helper ──────────────────────────────────────────────────────────
 const prog = document.getElementById('prog');
 const msg  = document.getElementById('load-msg');
 function setP(p, m) { prog.style.width = p + '%'; if (m) msg.textContent = m; }
 
-setP(5, 'Initializing WebGL renderer...');
+setP(20, 'Initializing WebGL renderer...');
 
-// ─── Renderer ────────────────────────────────────────────────────────────────
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.1;
-renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMappingExposure = 1.05;
 document.body.appendChild(renderer.domElement);
 
-// ─── Scene + Camera ──────────────────────────────────────────────────────────
-const scene  = new THREE.Scene();
-scene.background = new THREE.Color(0x060a10);
-scene.fog = new THREE.FogExp2(0x060a10, 0.04);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0f1318);
 
-const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.01, 80);
-camera.position.set(0, 1.55, 2.6);
-camera.lookAt(0, 1.35, 0);
+const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.1, 50);
+camera.position.set(0, 1.38, 1.85);
 
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.set(0, 1.3, 0);
-controls.minDistance = 1.0; controls.maxDistance = 4.5;
-controls.maxPolarAngle = Math.PI * 0.64;
-controls.minPolarAngle = Math.PI * 0.15;
-controls.enablePan = false; controls.enableDamping = true; controls.dampingFactor = 0.08;
+controls.target.set(0, 1.22, 0);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+controls.minDistance = 0.8;
+controls.maxDistance = 4.0;
+controls.update();
 
-setP(15, 'Setting up studio lighting...');
+// ── Lighting ────────────────────────────────────────────────────────────────
+const ambient = new THREE.AmbientLight(0xffffff, 0.85);
+scene.add(ambient);
 
-// ─── Lighting ─────────────────────────────────────────────────────────────────
-scene.add(new THREE.AmbientLight(0x1a2838, 1.4));
+const keyLight = new THREE.DirectionalLight(0xfff3e0, 1.6);
+keyLight.position.set(2.5, 3.5, 2.5);
+keyLight.castShadow = true;
+scene.add(keyLight);
 
-const key = new THREE.DirectionalLight(0xfff5e0, 3.0);
-key.position.set(-1.2, 3.2, 2.5); key.castShadow = true;
-key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.001;
-scene.add(key);
+const fillLight = new THREE.DirectionalLight(0xdbeafe, 0.9);
+fillLight.position.set(-2.5, 2.0, 2.0);
+scene.add(fillLight);
 
-const fill = new THREE.DirectionalLight(0xa8d0ff, 0.9);
-fill.position.set(2, 2, 1); scene.add(fill);
+const rimLight = new THREE.DirectionalLight(0x00e5ff, 1.1);
+rimLight.position.set(0, 3.2, -2.5);
+scene.add(rimLight);
 
-const rim = new THREE.DirectionalLight(0x00e5ff, 0.5);
-rim.position.set(0, 2.5, -2.5); scene.add(rim);
+setP(50, 'Sculpting TERGUAMI Digital Human Mesh & MANO Hands...');
 
-scene.add(new THREE.HemisphereLight(0x1a2838, 0x0d1525, 0.5));
+// ── Construct TERGUAMI Digital Human ─────────────────────────────────────────
+const rootGroup = new THREE.Group();
+scene.add(rootGroup);
 
-// ─── Floor ────────────────────────────────────────────────────────────────────
-const floorMat = new THREE.MeshStandardMaterial({ color: 0x080e18, roughness: 0.88, metalness: 0.04 });
-const floor = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), floorMat);
-floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true;
-scene.add(floor);
+const skinMaterial = new THREE.MeshStandardMaterial({ color: 0x734327, roughness: 0.48, metalness: 0.08 });
+const suitMaterial = new THREE.MeshStandardMaterial({ color: 0x16191d, roughness: 0.75, metalness: 0.12 });
+const innerShirtMaterial = new THREE.MeshStandardMaterial({ color: 0x0c0e10, roughness: 0.85 });
+const hairMaterial = new THREE.MeshStandardMaterial({ color: 0x141110, roughness: 0.65, metalness: 0.15 });
+const cyanGlowMaterial = new THREE.MeshStandardMaterial({ color: 0x00e5ff, emissive: 0x00c4e6, emissiveIntensity: 0.85, roughness: 0.2 });
+const sensorHardwareMaterial = new THREE.MeshStandardMaterial({ color: 0xdde4ea, roughness: 0.25, metalness: 0.8 });
+const goldContactMaterial = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.3, metalness: 0.7 });
 
-// Cyan ring glow
-const ring = new THREE.Mesh(
-  new THREE.RingGeometry(0.36, 0.40, 80),
-  new THREE.MeshBasicMaterial({ color: 0x00e5ff, side: THREE.DoubleSide, transparent: true, opacity: 0.4 })
-);
-ring.rotation.x = -Math.PI / 2; ring.position.y = 0.002;
-scene.add(ring);
+// Pelvis & Spine
+const pelvis = new THREE.Group();
+pelvis.position.set(0, 0.92, 0);
+rootGroup.add(pelvis);
 
-setP(30, 'Constructing humanoid skeleton...');
+const lowerTorso = new THREE.Mesh(new THREE.CylinderGeometry(0.185, 0.165, 0.22, 28), suitMaterial);
+lowerTorso.position.y = 0.11;
+pelvis.add(lowerTorso);
 
-// ──────────────────────────────────────────────────────────────────────────────
-//  PROCEDURAL 3D HUMANOID AVATAR
-//  Dark-skinned Ethiopian woman — built from Three.js geometry + Skeleton
-// ──────────────────────────────────────────────────────────────────────────────
+const spine = new THREE.Group();
+spine.position.set(0, 0.22, 0);
+pelvis.add(spine);
 
-// Skin / clothing materials
-const skinMat  = new THREE.MeshStandardMaterial({ color: 0x5C3D2E, roughness: 0.75, metalness: 0.05 });
-const darkMat  = new THREE.MeshStandardMaterial({ color: 0x1a1a22, roughness: 0.85, metalness: 0.06 });
-const blazerM  = new THREE.MeshStandardMaterial({ color: 0x1c2028, roughness: 0.80, metalness: 0.08 });
-const hairMat  = new THREE.MeshStandardMaterial({ color: 0x1a0f0a, roughness: 0.95, metalness: 0.0  });
-const cyanMat  = new THREE.MeshStandardMaterial({ color: 0x00e5ff, roughness: 0.4, metalness: 0.3, emissive: 0x00e5ff, emissiveIntensity: 0.6 });
-const eyeMat   = new THREE.MeshStandardMaterial({ color: 0x100808, roughness: 0.2, metalness: 0.5 });
-const lipMat   = new THREE.MeshStandardMaterial({ color: 0x8B4040, roughness: 0.6, metalness: 0.0 });
-const toothMat = new THREE.MeshStandardMaterial({ color: 0xf5f0ea, roughness: 0.3, metalness: 0.0 });
+const chestGeo = new THREE.CylinderGeometry(0.245, 0.195, 0.26, 32);
+chestGeo.scale(1.15, 1.0, 0.88);
+const chest = new THREE.Mesh(chestGeo, suitMaterial);
+chest.position.y = 0.13;
+spine.add(chest);
 
-// ── Bone registry ─────────────────────────────────────────────────────────────
-const bones = {};
+// High Dark Turtleneck & Neck
+const innerShirt = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.11, 0.14, 24), innerShirtMaterial);
+innerShirt.position.set(0, 0.21, 0.02);
+spine.add(innerShirt);
 
-function makeBone(name, parent, pos) {
-  const bone = new THREE.Bone();
-  bone.name  = name;
-  bones[name] = bone;
-  bone.position.set(...pos);
-  if (parent) parent.add(bone);
-  return bone;
-}
+const neck = new THREE.Group();
+neck.position.set(0, 0.27, 0);
+spine.add(neck);
 
-// Root skeleton
-const skeleton_root = makeBone('Hips', null, [0, 0.95, 0]);
+const neckMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.062, 0.075, 0.12, 24), skinMaterial);
+neckMesh.position.y = 0.06;
+neck.add(neckMesh);
 
-// Spine chain
-const spine1 = makeBone('Spine',  skeleton_root, [0, 0.10, 0]);
-const spine2 = makeBone('Spine1', spine1,         [0, 0.14, 0]);
-const spine3 = makeBone('Spine2', spine2,         [0, 0.14, 0]);
-const neck   = makeBone('Neck',   spine3,         [0, 0.18, 0]);
-const head   = makeBone('Head',   neck,           [0, 0.12, 0]);
+// Luminous Collar Necklace ("TEREGUWAMI · ተርጓሚ")
+const collarTorusGeo = new THREE.TorusGeometry(0.078, 0.012, 16, 40);
+collarTorusGeo.rotateX(Math.PI / 2);
+collarTorusGeo.scale(1.0, 1.15, 1.0);
+const collarMesh = new THREE.Mesh(collarTorusGeo, cyanGlowMaterial);
+collarMesh.position.set(0, 0.04, 0.01);
+neck.add(collarMesh);
 
-// Right arm
-const rShldr = makeBone('RightShoulder', spine3,   [-0.08, 0.16, 0]);
-const rArm   = makeBone('RightArm',      rShldr,   [-0.16, 0,    0]);
-const rFarm  = makeBone('RightForeArm',  rArm,     [-0.28, 0,    0]);
-const rHand  = makeBone('RightHand',     rFarm,    [-0.26, 0,    0]);
+// Head & Face
+const head = new THREE.Group();
+head.position.set(0, 0.12, 0);
+neck.add(head);
 
-// Left arm
-const lShldr = makeBone('LeftShoulder',  spine3,   [ 0.08, 0.16, 0]);
-const lArm   = makeBone('LeftArm',       lShldr,   [ 0.16, 0,    0]);
-const lFarm  = makeBone('LeftForeArm',   lArm,     [ 0.28, 0,    0]);
-const lHand  = makeBone('LeftHand',      lFarm,    [ 0.26, 0,    0]);
+const craniumGeo = new THREE.SphereGeometry(0.125, 36, 28);
+craniumGeo.scale(0.96, 1.18, 1.08);
+const cranium = new THREE.Mesh(craniumGeo, skinMaterial);
+head.add(cranium);
 
-// Right fingers
-function makeFingers(hand, side) {
-  const s = side === 'R' ? -1 : 1;
-  ['Index','Middle','Ring','Pinky'].forEach((f, fi) => {
-    const offX = s * (0.04 + fi * 0.022);
-    const b1 = makeBone(`${side}Hand${f}1`, hand, [offX, s * -0.04, 0.025]);
-    const b2 = makeBone(`${side}Hand${f}2`, b1,   [0, 0, 0.035]);
-    const b3 = makeBone(`${side}Hand${f}3`, b2,   [0, 0, 0.025]);
+const jawGeo = new THREE.ConeGeometry(0.09, 0.12, 24);
+jawGeo.rotateX(Math.PI);
+jawGeo.scale(1.0, 0.8, 0.9);
+const jaw = new THREE.Mesh(jawGeo, skinMaterial);
+jaw.position.set(0, -0.06, 0.035);
+head.add(jaw);
+
+// Braided Hair Crown & Bun
+const hairCrownGeo = new THREE.SphereGeometry(0.134, 32, 24);
+hairCrownGeo.scale(0.98, 1.16, 1.06);
+const hairCrown = new THREE.Mesh(hairCrownGeo, hairMaterial);
+hairCrown.position.set(0, 0.025, -0.02);
+head.add(hairCrown);
+
+const bun = new THREE.Mesh(new THREE.SphereGeometry(0.072, 24, 20), hairMaterial);
+bun.scale.set(1.1, 0.9, 0.8);
+bun.position.set(0, 0.04, -0.14);
+head.add(bun);
+
+// Eyes & Brows
+const createEye = (isLeft) => {
+  const eyeGroup = new THREE.Group();
+  eyeGroup.position.set(isLeft ? -0.038 : 0.038, 0.018, 0.115);
+  const eyeball = new THREE.Mesh(new THREE.SphereGeometry(0.015, 16, 16), new THREE.MeshBasicMaterial({ color: 0xf8fafc }));
+  const iris = new THREE.Mesh(new THREE.CircleGeometry(0.0075, 16), new THREE.MeshStandardMaterial({ color: 0x3d2314, roughness: 0.1 }));
+  iris.position.set(0, 0, 0.014);
+  const pupil = new THREE.Mesh(new THREE.CircleGeometry(0.0035, 16), new THREE.MeshBasicMaterial({ color: 0x050505 }));
+  pupil.position.set(0, 0, 0.0145);
+  eyeball.add(iris);
+  eyeball.add(pupil);
+  eyeGroup.add(eyeball);
+  return eyeGroup;
+};
+head.add(createEye(true));
+head.add(createEye(false));
+
+// Earpiece Hardware & Cheek Electrodes
+const earpiece = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.048, 0.022), sensorHardwareMaterial);
+earpiece.position.set(0.125, 0.02, 0.01);
+head.add(earpiece);
+
+const electrode1 = new THREE.Mesh(new THREE.CylinderGeometry(0.0065, 0.0065, 0.004, 12), goldContactMaterial);
+electrode1.rotateZ(Math.PI / 2);
+electrode1.position.set(0.098, 0.0, 0.082);
+head.add(electrode1);
+
+const electrode2 = new THREE.Mesh(new THREE.CylinderGeometry(0.0065, 0.0065, 0.004, 12), goldContactMaterial);
+electrode2.rotateZ(Math.PI / 2);
+electrode2.position.set(0.082, -0.038, 0.075);
+head.add(electrode2);
+
+// ── MANO Articulated Hands ──────────────────────────────────────────────────
+const buildHand = (isLeft) => {
+  const side = isLeft ? -1 : 1;
+  const handRoot = new THREE.Group();
+  const palm = new THREE.Mesh(new THREE.BoxGeometry(0.052, 0.068, 0.022), skinMaterial);
+  palm.position.y = -0.034;
+  handRoot.add(palm);
+
+  const fingers = [];
+  const specs = [
+    { x: side * -0.028, y: -0.018, len: 0.022, r: 0.0065 },
+    { x: side * -0.018, y: -0.068, len: 0.028, r: 0.0055 },
+    { x: side * -0.006, y: -0.072, len: 0.032, r: 0.0058 },
+    { x: side * 0.007, y: -0.068, len: 0.029, r: 0.0054 },
+    { x: side * 0.019, y: -0.062, len: 0.024, r: 0.0048 }
+  ];
+
+  specs.forEach(s => {
+    const mcp = new THREE.Group();
+    mcp.position.set(s.x, s.y, 0);
+    handRoot.add(mcp);
+
+    const p1 = new THREE.Mesh(new THREE.CylinderGeometry(s.r * 0.9, s.r, s.len, 10), skinMaterial);
+    p1.position.y = -s.len * 0.5;
+    mcp.add(p1);
+
+    const pip = new THREE.Group();
+    pip.position.y = -s.len;
+    mcp.add(pip);
+
+    const p2 = new THREE.Mesh(new THREE.CylinderGeometry(s.r * 0.8, s.r * 0.9, s.len * 0.8, 10), skinMaterial);
+    p2.position.y = -s.len * 0.4;
+    pip.add(p2);
+
+    const dip = new THREE.Group();
+    dip.position.y = -s.len * 0.8;
+    pip.add(dip);
+
+    const p3 = new THREE.Mesh(new THREE.CylinderGeometry(s.r * 0.65, s.r * 0.8, s.len * 0.65, 10), skinMaterial);
+    p3.position.y = -s.len * 0.32;
+    dip.add(p3);
+
+    fingers.push({ mcp, pip, dip });
   });
-  const t1 = makeBone(`${side}HandThumb1`, hand, [s * 0.012, 0, 0.02]);
-  const t2 = makeBone(`${side}HandThumb2`, t1,   [0, 0, 0.028]);
-}
-makeFingers(rHand, 'R');
-makeFingers(lHand, 'L');
 
-// Legs
-const rHip   = makeBone('RightUpLeg',  skeleton_root, [-0.11, -0.04, 0]);
-const rKnee  = makeBone('RightLeg',    rHip,          [0, -0.46, 0]);
-const rAnkle = makeBone('RightFoot',   rKnee,         [0, -0.44, 0]);
-const lHip   = makeBone('LeftUpLeg',   skeleton_root, [ 0.11, -0.04, 0]);
-const lKnee  = makeBone('LeftLeg',     lHip,          [0, -0.46, 0]);
-const lAnkle = makeBone('LeftFoot',    lKnee,         [0, -0.44, 0]);
-
-setP(50, 'Building mesh geometry...');
-
-// ── Geometry builder helpers ──────────────────────────────────────────────────
-function addMesh(geo, mat, parent, pos=[0,0,0], rot=[0,0,0], scale=[1,1,1]) {
-  const m = new THREE.Mesh(geo, mat);
-  m.castShadow = true; m.receiveShadow = true;
-  m.position.set(...pos);
-  m.rotation.set(...rot);
-  m.scale.set(...scale);
-  parent.add(m);
-  return m;
-}
-
-// ── Avatar group ──────────────────────────────────────────────────────────────
-const avatarGroup = new THREE.Group();
-avatarGroup.position.y = 0;
-scene.add(avatarGroup);
-avatarGroup.add(skeleton_root);
-
-// Torso (blazer)
-addMesh(new THREE.CapsuleGeometry(0.185, 0.45, 8, 16), blazerM, spine1, [0, 0.22, 0]);
-
-// Lower body / pants
-addMesh(new THREE.CapsuleGeometry(0.17, 0.35, 8, 16), darkMat, skeleton_root, [0, -0.05, 0]);
-
-// Neck
-addMesh(new THREE.CapsuleGeometry(0.058, 0.12, 6, 10), skinMat, neck, [0, 0.06, 0]);
-
-// HEAD ─────────────────────────────────────────────────────────────────────────
-const headGeo = new THREE.SphereGeometry(0.13, 24, 20);
-const headMesh = addMesh(headGeo, skinMat, head, [0, 0.13, 0]);
-headMesh.scale.set(1.0, 1.22, 1.0);
-
-// Forehead broader than chin — flatten back slightly
-const headGroup = new THREE.Group();
-head.add(headGroup);
-headGroup.position.set(0, 0.13, 0);
-
-// Eyes (white + pupil)
-[-0.043, 0.043].forEach((x, i) => {
-  const eyeWh = addMesh(new THREE.SphereGeometry(0.022, 12, 10), new THREE.MeshStandardMaterial({color:0xfaf0e0,roughness:0.2}), headGroup, [x, 0.02, 0.115]);
-  addMesh(new THREE.SphereGeometry(0.012, 10, 8), eyeMat, headGroup, [x, 0.02, 0.128]);
-});
-
-// Eyebrows (stored for morph driven tilt)
-const browGeo = new THREE.BoxGeometry(0.048, 0.006, 0.008);
-const browL = addMesh(browGeo, hairMat, headGroup, [-0.043, 0.042, 0.115]);
-const browR = addMesh(browGeo, hairMat, headGroup, [ 0.043, 0.042, 0.115]);
-
-// Nose
-addMesh(new THREE.ConeGeometry(0.014, 0.028, 8), skinMat, headGroup, [0, -0.01, 0.128], [Math.PI, 0, 0]);
-
-// Lips
-addMesh(new THREE.CapsuleGeometry(0.025, 0.04, 4, 8), lipMat, headGroup, [0, -0.042, 0.12], [Math.PI/2, 0, 0], [1, 0.5, 1]);
-
-// Jaw / lower face — used for jaw open (stored ref)
-const jawGroup = new THREE.Group();
-headGroup.add(jawGroup);
-jawGroup.position.set(0, -0.03, 0);
-const jawMesh = addMesh(
-  new THREE.SphereGeometry(0.10, 16, 12, 0, Math.PI*2, Math.PI*0.5, Math.PI*0.5),
-  skinMat, jawGroup, [0, 0, 0]
-);
-jawMesh.scale.set(1.0, 0.65, 0.95);
-
-// Teeth (visible when jaw open)
-const teethMesh = addMesh(new THREE.BoxGeometry(0.05, 0.012, 0.01), toothMat, jawGroup, [0, 0.008, 0.1]);
-teethMesh.visible = false;
-
-// HAIR (micro-braids approximation — layered spheres) 
-const hairGroup = new THREE.Group();
-headGroup.add(hairGroup);
-// Hair cap
-addMesh(new THREE.SphereGeometry(0.136, 16, 14, 0, Math.PI*2, 0, Math.PI*0.55), hairMat, hairGroup, [0, 0.04, -0.01]);
-// Braid rows
-for (let i = 0; i < 6; i++) {
-  const angle = (i / 6) * Math.PI;
-  addMesh(new THREE.CapsuleGeometry(0.012, 0.09, 4, 6), hairMat, hairGroup,
-    [Math.sin(angle) * 0.125, 0.02 - i * 0.006, -Math.cos(angle) * 0.125 + 0.02]);
-}
-// Crown braids
-for (let i = 0; i < 8; i++) {
-  const a = (i/8)*Math.PI*2;
-  addMesh(new THREE.CapsuleGeometry(0.009, 0.055, 4, 5), hairMat, hairGroup,
-    [Math.sin(a)*0.09, 0.10, Math.cos(a)*0.075]);
-}
-
-// EARS
-[-1, 1].forEach(s => {
-  addMesh(new THREE.SphereGeometry(0.022, 8, 8), skinMat, headGroup, [s * 0.135, 0.01, 0.02]);
-});
-
-// Cyan collar neon wire (TEREGUWAMI glow ring)
-const collarRing = new THREE.Mesh(
-  new THREE.TorusGeometry(0.085, 0.004, 8, 40),
-  cyanMat
-);
-collarRing.rotation.x = Math.PI / 2;
-neck.add(collarRing);
-collarRing.position.set(0, 0.03, 0);
-
-// Sensor electrode dots (jaw + cheek)
-[[-0.09, 0.02, 0.09], [0.09, 0.02, 0.09], [-0.07, 0.06, 0.10], [0.07, 0.06, 0.10]].forEach(p => {
-  addMesh(new THREE.SphereGeometry(0.008, 6, 6),
-    new THREE.MeshStandardMaterial({color:0xDAA520,roughness:0.3,metalness:0.8,emissive:0xDAA520,emissiveIntensity:0.3}),
-    headGroup, p);
-});
-
-// BLE sensor (behind left ear)
-addMesh(new THREE.BoxGeometry(0.022, 0.016, 0.010),
-  new THREE.MeshStandardMaterial({color:0x222233,roughness:0.5,metalness:0.5}),
-  headGroup, [-0.155, 0.02, 0.01]);
-
-// SHOULDERS + UPPER ARMS
-[[-1,'Right'], [1,'Left']].forEach(([s, side]) => {
-  const arm   = bones[`${side}Arm`];
-  const farm  = bones[`${side}ForeArm`];
-  const hand  = bones[`${side}Hand`];
-
-  // Upper arm
-  addMesh(new THREE.CapsuleGeometry(0.062, 0.22, 6, 10), blazerM, arm, [s*(-0.12), 0, 0], [0, 0, Math.PI/2]);
-  // Forearm skin
-  addMesh(new THREE.CapsuleGeometry(0.050, 0.20, 6, 10), skinMat, farm, [s*(-0.11), 0, 0], [0, 0, Math.PI/2]);
-  // Hand palm
-  addMesh(new THREE.BoxGeometry(0.072, 0.088, 0.032), skinMat, hand, [0, 0, 0.025]);
-
-  // Finger segments
-  ['Index','Middle','Ring','Pinky'].forEach((f, fi) => {
-    [1, 2, 3].forEach(seg => {
-      const b = bones[`${side}Hand${f}${seg}`];
-      if (!b) return;
-      const len = seg === 1 ? 0.036 : seg === 2 ? 0.028 : 0.020;
-      addMesh(new THREE.CapsuleGeometry(0.010, len, 4, 6), skinMat, b, [0, 0, len/2 + 0.004]);
-    });
-  });
-  [1, 2].forEach(seg => {
-    const b = bones[`${side}HandThumb${seg}`];
-    if (!b) return;
-    const len = seg === 1 ? 0.030 : 0.022;
-    addMesh(new THREE.CapsuleGeometry(0.010, len, 4, 6), skinMat, b, [0, 0, len/2 + 0.003]);
-  });
-});
-
-// LEGS
-[[-1,'Right'], [1,'Left']].forEach(([s, side]) => {
-  const up  = bones[`${side}UpLeg`];
-  const low = bones[`${side}Leg`];
-  addMesh(new THREE.CapsuleGeometry(0.075, 0.36, 6, 10), darkMat, up,  [0, -0.20, 0]);
-  addMesh(new THREE.CapsuleGeometry(0.055, 0.34, 6, 10), darkMat, low, [0, -0.22, 0]);
-});
-
-setP(75, 'Applying initial pose...');
-
-// ── Morph targets (simulated via object refs) ──────────────────────────────────
-// We drive brow, jaw, and other expressions via direct transforms on mesh refs
-const MORPHS = { browL, browR, jawGroup, teethMesh };
-let currentBS = {};
-
-function applyBlendshapes(bs) {
-  currentBS = { ...currentBS, ...bs };
-
-  // AU1 + AU2: brow raise — tilt both brows upward
-  const browRaise = Math.max(bs.browInnerUp || currentBS.browInnerUp || 0,
-                             bs.browOuterUpLeft || currentBS.browOuterUpLeft || 0);
-  const browFurrow = Math.max(bs.browDownLeft || currentBS.browDownLeft || 0,
-                              bs.browDownRight || currentBS.browDownRight || 0);
-  browL.position.y = 0.042 + browRaise * 0.014 - browFurrow * 0.006;
-  browR.position.y = 0.042 + browRaise * 0.014 - browFurrow * 0.006;
-  browL.rotation.z =  browFurrow * 0.25;
-  browR.rotation.z = -browFurrow * 0.25;
-
-  // AU jaw open — rotate jaw downward + show teeth
-  const jawOpen = bs.jawOpen !== undefined ? bs.jawOpen : (currentBS.jawOpen || 0);
-  jawGroup.rotation.x = jawOpen * 0.28;
-  teethMesh.visible = jawOpen > 0.12;
-}
-
-// ── Bone rotation from frame data ─────────────────────────────────────────────
-const BONE_MAP = {
-  'Spine2':'Spine2', 'Neck':'Neck', 'Head':'Head',
-  'RightArm':'RightArm', 'RightForeArm':'RightForeArm', 'RightHand':'RightHand',
-  'LeftArm':'LeftArm',   'LeftForeArm':'LeftForeArm',   'LeftHand':'LeftHand',
-  'right_shoulder':'RightArm', 'right_elbow':'RightForeArm', 'right_wrist':'RightHand',
-  'left_shoulder':'LeftArm',   'left_elbow':'LeftForeArm',   'left_wrist':'LeftHand',
-  'RightHandIndex1':'RightHandIndex1', 'RightHandMiddle1':'RightHandMiddle1',
-  'RightHandRing1':'RightHandRing1',   'RightHandPinky1':'RightHandPinky1',
-  'RightHandThumb1':'RightHandThumb1',
-  'LeftHandIndex1':'LeftHandIndex1',   'LeftHandMiddle1':'LeftHandMiddle1',
+  return { root: handRoot, fingers };
 };
 
-function applyRotations(rots) {
-  Object.entries(rots).forEach(([k, r]) => {
-    const name = BONE_MAP[k] || k;
-    const bone = bones[name];
-    if (!bone) return;
-    if (r.x !== undefined) bone.rotation.x = r.x;
-    if (r.y !== undefined) bone.rotation.y = r.y;
-    if (r.z !== undefined) bone.rotation.z = r.z;
+const createArm = (isLeft) => {
+  const side = isLeft ? -1 : 1;
+  const shoulder = new THREE.Group();
+  shoulder.position.set(side * 0.24, 0.22, 0.0);
+  spine.add(shoulder);
+
+  const upperArm = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.046, 0.27, 24), suitMaterial);
+  upperArm.position.y = -0.135;
+  shoulder.add(upperArm);
+
+  const elbow = new THREE.Group();
+  elbow.position.set(0, -0.27, 0);
+  shoulder.add(elbow);
+
+  const forearmSleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.046, 0.041, 0.18, 24), suitMaterial);
+  forearmSleeve.position.y = -0.09;
+  elbow.add(forearmSleeve);
+
+  const forearmSkin = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.033, 0.09, 20), skinMaterial);
+  forearmSkin.position.y = -0.225;
+  elbow.add(forearmSkin);
+
+  const wrist = new THREE.Group();
+  wrist.position.set(0, -0.26, 0);
+  elbow.add(wrist);
+
+  const hand = buildHand(isLeft);
+  wrist.add(hand.root);
+
+  return { shoulder, elbow, wrist, hand };
+};
+
+const leftArm = createArm(true);
+const rightArm = createArm(false);
+
+// Initial Signing Stance
+leftArm.shoulder.rotation.set(0.65, 0.25, -0.45);
+leftArm.elbow.rotation.set(-1.45, 0.1, -0.3);
+leftArm.wrist.rotation.set(0.35, 0.2, 0.15);
+
+rightArm.shoulder.rotation.set(0.65, -0.25, 0.45);
+rightArm.elbow.rotation.set(-1.45, -0.1, 0.3);
+rightArm.wrist.rotation.set(0.35, -0.2, -0.15);
+
+[leftArm.hand, rightArm.hand].forEach(h => {
+  h.fingers.forEach((f, idx) => {
+    f.mcp.rotation.x = -0.15 - (idx * 0.05);
+    f.pip.rotation.x = -0.12;
+    f.dip.rotation.x = -0.08;
   });
-}
+});
 
-// ── Rest pose (arms down from T-pose) ────────────────────────────────────────
-function applyRestPose() {
-  bones['RightArm'].rotation.z    = -1.05;
-  bones['LeftArm'].rotation.z     =  1.05;
-  bones['RightForeArm'].rotation.z = -0.12;
-  bones['LeftForeArm'].rotation.z  =  0.12;
-}
-applyRestPose();
+setP(100, 'TERGUAMI Ready');
+setTimeout(() => {
+  const loadEl = document.getElementById('loading');
+  loadEl.style.opacity = '0';
+  setTimeout(() => loadEl.remove(), 700);
+}, 400);
 
-setP(90, 'Starting render loop...');
+// ── Interactive Controls ────────────────────────────────────────────────────
+let isMirrored = false;
+document.getElementById('btn-mirror').addEventListener('click', () => {
+  isMirrored = !isMirrored;
+  rootGroup.scale.x = isMirrored ? -1 : 1;
+});
 
-// ─── Idle signing demo ────────────────────────────────────────────────────────
-let phase = 0, demoMode = true;
-
-function idleDemo(dt) {
-  if (!demoMode) return;
-  phase += dt * 1.0;
-  const p = phase;
-  const isQ = Math.sin(p * 0.32) > 0.42;
-
-  // Right arm — primary signing
-  bones['RightArm'].rotation.x    = -0.55 - Math.abs(Math.sin(p * 0.70)) * 0.42;
-  bones['RightArm'].rotation.z    = -1.05 + Math.sin(p * 0.60) * 0.30;
-  bones['RightForeArm'].rotation.x =  0.25 + Math.abs(Math.sin(p * 1.10)) * 0.55;
-  bones['RightHand'].rotation.x    =  Math.sin(p * 1.40) * 0.22;
-  bones['RightHand'].rotation.y    =  Math.sin(p * 0.90) * 0.18;
-
-  // Left arm — support
-  bones['LeftArm'].rotation.x    = -0.40 - Math.abs(Math.cos(p * 0.65)) * 0.32;
-  bones['LeftArm'].rotation.z    =  1.05 - Math.sin(p * 0.55) * 0.22;
-  bones['LeftForeArm'].rotation.x =  0.18 + Math.abs(Math.cos(p * 1.00)) * 0.42;
-  bones['LeftHand'].rotation.x    = -Math.sin(p * 1.30) * 0.18;
-
-  // Finger curl
-  const curl = Math.abs(Math.sin(p * 1.5)) * 0.70;
-  ['Index','Middle','Ring','Pinky'].forEach((f, fi) => {
-    const b = bones[`RightHand${f}1`];
-    if (b) b.rotation.x = curl * (0.8 + fi * 0.06);
-  });
-  const tb = bones['RightHandThumb1'];
-  if (tb) { tb.rotation.z = curl * 0.28; tb.rotation.x = curl * 0.15; }
-
-  // Spine + neck sway
-  bones['Spine2'].rotation.z = Math.sin(p * 0.27) * 0.03;
-  bones['Neck'].rotation.z   = Math.sin(p * 0.35) * 0.04;
-  bones['Head'].rotation.z   = Math.sin(p * 0.40) * 0.03;
-
-  // Facial
-  const br = isQ ? Math.abs(Math.sin(p * 0.90)) * 0.70 : 0.04;
-  const bf = isQ ? 0 : Math.abs(Math.sin(p * 0.70)) * 0.35;
-  const jo = Math.abs(Math.sin(p * 1.30)) * 0.18;
-  applyBlendshapes({ browInnerUp: br, browOuterUpLeft: br, browDownLeft: bf, browDownRight: bf, jawOpen: jo });
-
-  // AU strip
-  setAU(br, br, bf, jo);
-  document.getElementById('sign-lbl').textContent =
-    isQ ? 'NON-MANUAL: Polar Question (AU1+AU2)' : 'NON-MANUAL: Negation Marker (AU4)';
-}
-
-function setAU(a1, a2, a4, aj) {
-  document.getElementById('au1').style.width = (a1*100).toFixed(0)+'%';
-  document.getElementById('au2').style.width = (a2*100).toFixed(0)+'%';
-  document.getElementById('au4').style.width = (a4*100).toFixed(0)+'%';
-  document.getElementById('jaw').style.width  = (aj*100).toFixed(0)+'%';
-  document.getElementById('v1').textContent = a1.toFixed(2);
-  document.getElementById('v2').textContent = a2.toFixed(2);
-  document.getElementById('v4').textContent = a4.toFixed(2);
-  document.getElementById('vj').textContent  = aj.toFixed(2);
-}
-
-// ─── Render loop ──────────────────────────────────────────────────────────────
+// Animation Loop
 const clock = new THREE.Clock();
-let fc = 0, lt = performance.now();
-
-(function animate() {
+function animate() {
   requestAnimationFrame(animate);
-  const dt = clock.getDelta();
   controls.update();
-  idleDemo(dt);
 
-  // Ring pulse
-  ring.material.opacity = 0.28 + Math.sin(Date.now() * 0.002) * 0.10;
+  const t = clock.getElapsedTime();
+  spine.position.y = 0.22 + Math.sin(t * 1.8) * 0.006;
+  head.rotation.x = Math.sin(t * 1.2) * 0.015;
+  head.rotation.y = Math.cos(t * 0.9) * 0.02;
 
   renderer.render(scene, camera);
+}
+animate();
 
-  fc++; const n = performance.now();
-  if (n - lt >= 1000) {
-    document.getElementById('fps-b').textContent = fc + ' FPS';
-    fc = 0; lt = n;
-  }
-})();
-
-// ─── Resize ───────────────────────────────────────────────────────────────────
 window.addEventListener('resize', () => {
   camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
 });
-
-// ─── Hide loading ─────────────────────────────────────────────────────────────
-setP(100, 'Avatar ready');
-setTimeout(() => {
-  const el = document.getElementById('loading');
-  el.style.opacity = '0';
-  setTimeout(() => el.remove(), 800);
-}, 600);
-
-// ─── Public API ───────────────────────────────────────────────────────────────
-/**
- * window.renderSignFrame({ rotations, blendshapes, geez_text, latin_text, sign_name })
- * Called by FastAPI production endpoint to drive live signing.
- */
-window.renderSignFrame = function(payload) {
-  demoMode = false;
-  const f = typeof payload === 'string' ? JSON.parse(payload) : payload;
-  if (f.rotations)   applyRotations(f.rotations);
-  if (f.blendshapes) applyBlendshapes(f.blendshapes);
-  if (f.geez_text)   document.getElementById('g-text').textContent = f.geez_text;
-  if (f.latin_text)  document.getElementById('l-text').textContent = f.latin_text;
-  if (f.sign_name)   document.getElementById('sign-lbl').textContent = f.sign_name;
-  if (f.blendshapes) {
-    const bs = f.blendshapes;
-    setAU(bs.browInnerUp||0, bs.browOuterUpLeft||0, bs.browDownLeft||0, bs.jawOpen||0);
-  }
-};
-
-console.log('[Tereguwami] 3D avatar engine ready. Use window.renderSignFrame(payload) to drive signing.');
 </script>
 </body>
 </html>

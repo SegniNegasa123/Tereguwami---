@@ -266,6 +266,35 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
+    // Avatar Speed, Mirror Mode, and Replay Controls
+    const avatarSpeedSelect = document.getElementById("avatar-speed-select");
+    const btnMirrorAvatar = document.getElementById("btn-mirror-avatar");
+    const btnReplayAvatar = document.getElementById("btn-replay-avatar");
+
+    if (avatarSpeedSelect) {
+        avatarSpeedSelect.addEventListener("change", (e) => {
+            if (avatarScene) {
+                avatarScene.setSpeed(parseFloat(e.target.value));
+            }
+        });
+    }
+
+    if (btnMirrorAvatar) {
+        btnMirrorAvatar.addEventListener("click", () => {
+            if (avatarScene) {
+                const isMirrored = avatarScene.toggleMirrorMode();
+                btnMirrorAvatar.style.background = isMirrored ? "rgba(0, 229, 255, 0.25)" : "";
+                btnMirrorAvatar.style.borderColor = isMirrored ? "#00e5ff" : "";
+            }
+        });
+    }
+
+    if (btnReplayAvatar) {
+        btnReplayAvatar.addEventListener("click", () => {
+            btnSendToAvatar.click();
+        });
+    }
+
     // Speech Recognition (Web Speech API)
     if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
         const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
