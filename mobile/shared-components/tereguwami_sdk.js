@@ -155,15 +155,130 @@ class TereguwamiSDK {
     }
 
     /**
-     * Vocalize text aloud using Web Speech API (for hearing interlocutor).
+     * Vocalize text aloud using multi-tiered Web Speech API + Audio Stream fallback.
+     * @param {string} text - Text to vocalize
+     * @param {string} lang - "am", "om", or "en"
+     * @param {Function} onStart - callback when speech begins
+     * @param {Function} onEnd - callback when speech completes
      */
-    speakAloud(text, lang = "am") {
-        if (!("speechSynthesis" in window)) return;
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = lang === "am" ? "am-ET" : lang === "om" ? "om-ET" : "en-US";
-        utterance.rate = 0.95;
-        window.speechSynthesis.speak(utterance);
+    speakAloud(text, lang = "am", onStart = null, onEnd = null) {
+        if (!text || !text.trim()) {
+            if (onEnd) onEnd();
+            return;
+        }
+
+        // Cancel previous audio or speech
+        this.stopSpeaking();
+
+        if (onStart) onStart();
+
+        // 1. If language is English and Web Speech is available, use SpeechSynthesis
+        if (lang === "en" && "speechSynthesis" in window) {
+            try {
+                window.speechSynthesis.resume();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = "en-US";
+                utterance.rate = 1.0;
+                utterance.onend = () => { if (onEnd) onEnd(); };
+                utterance.onerror = (e) => {
+                    console.warn("[TTS] Web Speech English error, falling back to audio stream:", e);
+                    this._playAudioStream(text, "en", onEnd);
+                };
+                window.speechSynthesis.speak(utterance);
+                return;
+            } catch (err) {
+                console.warn("[TTS] SpeechSynthesis failed:", err);
+            }
+        }
+
+        // 2. For Amharic ('am') & Afaan Oromoo ('om'), check if a native browser voice actually exists
+        if ("speechSynthesis" in window) {
+            try {
+                const voices = window.speechSynthesis.getVoices() || [];
+                const targetCode = lang === "am" ? "am" : lang === "om" ? "om" : "en";
+                const matchingVoice = voices.find(v => v.lang && v.lang.toLowerCase().startsWith(targetCode));
+
+                if (matchingVoice) {
+                    window.speechSynthesis.resume();
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.voice = matchingVoice;
+                    utterance.lang = matchingVoice.lang;
+                    utterance.rate = 0.95;
+                    utterance.onend = () => { if (onEnd) onEnd(); };
+                    utterance.onerror = () => { this._playAudioStream(text, lang, onEnd); };
+                    window.speechSynthesis.speak(utterance);
+                    return;
+                }
+            } catch (e) {
+                // Fallthrough to stream
+            }
+        }
+
+        // 3. High-Quality Audio Stream for Amharic / Afaan Oromoo / Fallback
+        this._playAudioStream(text, lang, onEnd);
+    }
+
+    _playAudioStream(text, lang, onEnd) {
+        const langCode = lang === "om" ? "om" : lang === "am" ? "am" : "en";
+        const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${langCode}&client=tw-ob&q=${encodeURIComponent(text)}`;
+        const audio = new Audio(ttsUrl);
+        this._currentAudio = audio;
+
+        audio.onended = () => {
+            this._currentAudio = null;
+            if (onEnd) onEnd();
+        };
+
+        audio.onerror = (err) => {
+            console.warn("[TTS] Audio stream playback note:", err);
+            this._currentAudio = null;
+            // 4. Final Fallback: Attempt browser default voice anyway
+            if ("speechSynthesis" in window) {
+                try {
+                    window.speechSynthesis.resume();
+                    const fallbackUtterance = new SpeechSynthesisUtterance(text);
+                    fallbackUtterance.rate = 0.9;
+                    fallbackUtterance.onend = () => { if (onEnd) onEnd(); };
+                    fallbackUtterance.onerror = () => { if (onEnd) onEnd(); };
+                    window.speechSynthesis.speak(fallbackUtterance);
+                    return;
+                } catch (e) {}
+            }
+            if (onEnd) onEnd();
+        };
+
+        audio.play().catch(playErr => {
+            console.warn("[TTS] Audio stream play note:", playErr);
+            if ("speechSynthesis" in window) {
+                try {
+                    window.speechSynthesis.resume();
+                    const fallbackUtterance = new SpeechSynthesisUtterance(text);
+                    fallbackUtterance.onend = () => { if (onEnd) onEnd(); };
+                    fallbackUtterance.onerror = () => { if (onEnd) onEnd(); };
+                    window.speechSynthesis.speak(fallbackUtterance);
+                    return;
+                } catch (e) {}
+            }
+            if (onEnd) onEnd();
+        });
+    }
+
+    /**
+     * Cancel any active audio playback or speech synthesis.
+     */
+    stopSpeaking() {
+        if (this._currentAudio) {
+            try {
+                this._currentAudio.pause();
+                this._currentAudio.currentTime = 0;
+            } catch (e) {}
+            this._currentAudio = null;
+        }
+        if ("speechSynthesis" in window) {
+            try {
+                window.speechSynthesis.cancel();
+            } catch (e) {}
+        }
     }
 }
 

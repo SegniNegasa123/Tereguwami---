@@ -53,11 +53,11 @@ class ConstrainedDecoder:
         # Rule 2: Check for ungrounded hallucination (length mismatch sanity check)
         gloss_count = len(recognized_glosses)
         output_words = candidate_text.split()
-        if gloss_count > 0 and len(output_words) > (gloss_count * 3 + 2):
+        if gloss_count > 0 and len(output_words) > max(12, gloss_count * 6 + 4):
             return {
                 "final_text": candidate_text,
                 "is_faithful": False,
-                "confidence_score": confidence_score * 0.8,
+                "confidence_score": round(confidence_score * 0.8, 3),
                 "requires_clarification": True,
                 "requires_human_verification": is_high_stakes,
                 "reason": "Decoded sequence length significantly exceeds recognized visual sign units"

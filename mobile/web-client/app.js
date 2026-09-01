@@ -16,6 +16,73 @@ document.addEventListener("DOMContentLoaded", () => {
         console.warn("Avatar Three.js initialization notice:", e);
     }
 
+    // ── MediaPipe Holistic Real-Time Detection ──────────────────────
+    let mpHolistic = null;
+    let mpCamera = null;
+    let latestMPResults = null; // stores most recent MediaPipe detection results
+    let mediapipeReady = false;
+    let realLandmarkBuffer = null; // Float32Array(543*3) of most recent real landmarks
+
+    try {
+        if (typeof Holistic !== "undefined") {
+            mpHolistic = new Holistic({
+                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}`
+            });
+            mpHolistic.setOptions({
+                modelComplexity: 1,
+                smoothLandmarks: true,
+                enableSegmentation: false,
+                smoothSegmentation: false,
+                minDetectionConfidence: 0.5,
+                minTrackingConfidence: 0.5
+            });
+            mpHolistic.onResults((results) => {
+                latestMPResults = results;
+                mediapipeReady = true;
+
+                // Build a flat 543-landmark buffer from real results
+                const buf = new Float32Array(543 * 3);
+                // Pose: 33 landmarks [0..32]
+                if (results.poseLandmarks) {
+                    for (let i = 0; i < Math.min(results.poseLandmarks.length, 33); i++) {
+                        const lm = results.poseLandmarks[i];
+                        buf[i * 3] = lm.x; buf[i * 3 + 1] = lm.y; buf[i * 3 + 2] = lm.z;
+                    }
+                }
+                // Left Hand: 21 landmarks [33..53]
+                if (results.leftHandLandmarks) {
+                    for (let i = 0; i < Math.min(results.leftHandLandmarks.length, 21); i++) {
+                        const lm = results.leftHandLandmarks[i];
+                        const idx = (33 + i) * 3;
+                        buf[idx] = lm.x; buf[idx + 1] = lm.y; buf[idx + 2] = lm.z;
+                    }
+                }
+                // Right Hand: 21 landmarks [54..74]
+                if (results.rightHandLandmarks) {
+                    for (let i = 0; i < Math.min(results.rightHandLandmarks.length, 21); i++) {
+                        const lm = results.rightHandLandmarks[i];
+                        const idx = (54 + i) * 3;
+                        buf[idx] = lm.x; buf[idx + 1] = lm.y; buf[idx + 2] = lm.z;
+                    }
+                }
+                // Face Mesh: 468 landmarks [75..542]
+                if (results.faceLandmarks) {
+                    for (let i = 0; i < Math.min(results.faceLandmarks.length, 468); i++) {
+                        const lm = results.faceLandmarks[i];
+                        const idx = (75 + i) * 3;
+                        buf[idx] = lm.x; buf[idx + 1] = lm.y; buf[idx + 2] = lm.z;
+                    }
+                }
+                realLandmarkBuffer = buf;
+            });
+            console.log("[Tereguwami] MediaPipe Holistic initialized — real camera tracking enabled.");
+        } else {
+            console.warn("[Tereguwami] MediaPipe Holistic CDN not loaded — falling back to simulated landmarks.");
+        }
+    } catch (e) {
+        console.warn("[Tereguwami] MediaPipe Holistic init failed — using simulated fallback:", e);
+    }
+
     // 2. DOM Elements
     const connectionStatusEl = document.getElementById("connection-status");
     const langSelect = document.getElementById("lang-select");
@@ -77,18 +144,62 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // 4. Header Controls
+    function updateDisplayedTranslation(item) {
+        if (!item) return;
+        const targetLang = store.getState().targetLanguage;
+        const mainText = item[targetLang] || item.am;
+        // Subtitle: English if target is Amharic/Oromo; Amharic if target is English
+        const subText = targetLang === "en" ? item.am : item.en;
+        
+        liveTranslatedText.textContent = mainText;
+        liveTranslatedText.style.opacity = "1";
+        subTranslatedText.textContent = subText;
+        
+        const confColor = item.conf >= 96 ? "#00e676" : item.conf >= 93 ? "#ffca28" : "#ff5252";
+        confidenceBadge.textContent = `Confidence: ${item.conf}%`;
+        confidenceBadge.style.background = `${confColor}18`;
+        confidenceBadge.style.color = confColor;
+
+        if (store.getState().highStakesMode && item.conf < 95.0) {
+            clarificationAlert.classList.remove("hidden");
+        } else {
+            clarificationAlert.classList.add("hidden");
+        }
+    }
+
     langSelect.addEventListener("change", (e) => {
-        store.update({ targetLanguage: e.target.value });
+        const newLang = e.target.value;
+        store.update({ targetLanguage: newLang });
         const labels = { am: "Amharic (አማርኛ)", om: "Afaan Oromoo (Oromo)", en: "English (UK/US)" };
-        currentLangTag.textContent = labels[e.target.value] || "Amharic";
+        currentLangTag.textContent = labels[newLang] || "Amharic";
+
+        // Refresh current displayed text in new language
+        const activeDomain = store.getState().activeDomain;
+        const domainMatches = demoSentences.filter(s => s.domain === activeDomain);
+        const currentItem = (domainMatches.length > 0) ? (domainMatches[sentenceIdx % domainMatches.length] || domainMatches[0]) : demoSentences[0];
+        updateDisplayedTranslation(currentItem);
     });
 
     domainSelect.addEventListener("change", (e) => {
-        store.update({ activeDomain: e.target.value });
+        const newDomain = e.target.value;
+        store.update({ activeDomain: newDomain });
+        sentenceIdx = 0;
+        const domainMatches = demoSentences.filter(s => s.domain === newDomain);
+        if (domainMatches.length > 0) {
+            updateDisplayedTranslation(domainMatches[0]);
+        }
     });
 
     toggleHighStakes.addEventListener("change", (e) => {
         store.update({ highStakesMode: e.target.checked });
+        const activeDomain = store.getState().activeDomain;
+        const domainMatches = demoSentences.filter(s => s.domain === activeDomain);
+        const currentItem = (domainMatches.length > 0) ? (domainMatches[sentenceIdx % domainMatches.length] || domainMatches[0]) : demoSentences[0];
+        if (e.target.checked && currentItem && currentItem.conf < 95.0) {
+            clarificationAlert.classList.remove("hidden");
+        } else {
+            clarificationAlert.classList.add("hidden");
+        }
     });
 
     // 5. Camera & MediaPipe Landmark Overlay
@@ -97,6 +208,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let renderFrameId = null;
     let capturedFrameCount = 0;
     const cameraBadge = document.getElementById("camera-badge");
+    let useRealTracking = false; // true when MediaPipe Holistic is processing real frames
 
     btnToggleCamera.addEventListener("click", async () => {
         if (!cameraActive) {
@@ -111,11 +223,36 @@ document.addEventListener("DOMContentLoaded", () => {
                 capturedFrameCount = 0;
                 btnToggleCamera.textContent = "Stop Camera";
                 btnToggleCamera.classList.add("danger");
-                if (cameraBadge) { cameraBadge.style.display = "flex"; cameraBadge.querySelector(".tracking-dot").style.background = "#00e676"; }
+
+                // Start MediaPipe Camera helper if Holistic is available
+                if (mpHolistic && typeof Camera !== "undefined") {
+                    useRealTracking = true;
+                    mpCamera = new Camera(cameraFeed, {
+                        onFrame: async () => {
+                            if (mpHolistic && cameraActive) {
+                                await mpHolistic.send({ image: cameraFeed });
+                            }
+                        },
+                        width: 640,
+                        height: 480
+                    });
+                    mpCamera.start();
+                    if (cameraBadge) {
+                        cameraBadge.style.display = "flex";
+                        cameraBadge.querySelector(".tracking-dot").style.background = "#00e676";
+                    }
+                } else {
+                    useRealTracking = false;
+                    if (cameraBadge) {
+                        cameraBadge.style.display = "flex";
+                        cameraBadge.querySelector(".tracking-dot").style.background = "#ffca28";
+                    }
+                }
                 startCanvasOverlayLoop();
             } catch (err) {
                 console.warn("Webcam unavailable, using simulated landmark feed:", err);
                 cameraActive = true;
+                useRealTracking = false;
                 capturedFrameCount = 0;
                 btnToggleCamera.textContent = "Stop Camera (Sim)";
                 btnToggleCamera.classList.add("danger");
@@ -123,6 +260,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 startCanvasOverlayLoop();
             }
         } else {
+            // Stop camera and MediaPipe
+            if (mpCamera) {
+                mpCamera.stop();
+                mpCamera = null;
+            }
             if (cameraStream) {
                 cameraStream.getTracks().forEach(track => track.stop());
                 cameraStream = null;
@@ -130,7 +272,10 @@ document.addEventListener("DOMContentLoaded", () => {
             cameraFeed.srcObject = null;
             cameraFeed.style.display = "none";
             cameraActive = false;
+            useRealTracking = false;
             capturedFrameCount = 0;
+            latestMPResults = null;
+            realLandmarkBuffer = null;
             btnToggleCamera.textContent = "Start Camera";
             btnToggleCamera.classList.remove("danger");
             if (cameraBadge) { cameraBadge.style.display = "none"; }
@@ -144,7 +289,117 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    /** Draw clean landmark tracking dots on the canvas overlay (no skeleton spine). */
+    // ── Helper: Draw a list of MediaPipe landmarks on the canvas ──
+    function drawLandmarkSet(lmArray, W, H, color, radius, connectPairs) {
+        if (!lmArray) return;
+        // Draw connection lines
+        if (connectPairs) {
+            ctx.strokeStyle = color.replace(/[\d.]+\)$/, "0.2)");
+            ctx.lineWidth = 1;
+            connectPairs.forEach(([a, b]) => {
+                if (a < lmArray.length && b < lmArray.length) {
+                    ctx.beginPath();
+                    ctx.moveTo(lmArray[a].x * W, lmArray[a].y * H);
+                    ctx.lineTo(lmArray[b].x * W, lmArray[b].y * H);
+                    ctx.stroke();
+                }
+            });
+        }
+        // Draw dots
+        lmArray.forEach(lm => {
+            ctx.beginPath();
+            ctx.arc(lm.x * W, lm.y * H, radius, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+        });
+    }
+
+    // ── Helper: Calibrated & Smoothed AU values from face mesh landmarks ──
+    let emaBrow = 0.25;
+    let emaMouth = 0.15;
+    let emaHeadTilt = 0.0;
+
+    function computeRealAUs(faceLandmarks) {
+        if (!faceLandmarks || faceLandmarks.length < 468) {
+            return { browLift: emaBrow, mouthOpen: emaMouth, headTilt: emaHeadTilt };
+        }
+
+        // Face scale normalization using distance between top forehead (lm 10) and chin (lm 152)
+        const topHead = faceLandmarks[10];
+        const chin = faceLandmarks[152];
+        const faceHeight = Math.max(0.1, Math.sqrt(
+            (topHead.x - chin.x) ** 2 +
+            (topHead.y - chin.y) ** 2 +
+            ((topHead.z || 0) - (chin.z || 0)) ** 2
+        ));
+
+        // 1. Eyebrow raise (AU1/2): inner eyebrows (lm 66 & 296) relative to nose bridge (lm 168)
+        const browL = faceLandmarks[66];
+        const browR = faceLandmarks[296];
+        const noseBridge = faceLandmarks[168];
+        const rawBrowDist = (Math.abs(browL.y - noseBridge.y) + Math.abs(browR.y - noseBridge.y)) / 2;
+        // Normalized against face height
+        const normBrow = (rawBrowDist / faceHeight);
+        // Map typical range [0.12, 0.22] to [0.15, 0.95]
+        const targetBrow = Math.min(1.0, Math.max(0.05, (normBrow - 0.10) * 8.0));
+
+        // 2. Mouth open: vertical gap between upper lip (lm 13) and lower lip (lm 14)
+        const upperLip = faceLandmarks[13];
+        const lowerLip = faceLandmarks[14];
+        const rawLipGap = Math.sqrt(
+            (upperLip.x - lowerLip.x) ** 2 +
+            (upperLip.y - lowerLip.y) ** 2 +
+            ((upperLip.z || 0) - (lowerLip.z || 0)) ** 2
+        );
+        const normLip = rawLipGap / faceHeight;
+        // Map typical range [0.01, 0.20] to [0.05, 0.95]
+        const targetMouth = Math.min(1.0, Math.max(0.05, normLip * 6.5));
+
+        // 3. Head tilt: angle of inter-aural axis (left ear lm 234 & right ear lm 454)
+        const leftEar = faceLandmarks[234];
+        const rightEar = faceLandmarks[454];
+        const headTiltRad = Math.atan2(rightEar.y - leftEar.y, rightEar.x - leftEar.x);
+        let rawTiltDeg = (headTiltRad * 180 / Math.PI);
+        // Apply deadband around 0° (±1.5° -> 0°) to eliminate baseline sensor drift
+        if (Math.abs(rawTiltDeg) < 1.5) {
+            rawTiltDeg = 0.0;
+        }
+
+        // Exponential Moving Average smoothing (alpha = 0.35)
+        const alpha = 0.35;
+        emaBrow = emaBrow + alpha * (targetBrow - emaBrow);
+        emaMouth = emaMouth + alpha * (targetMouth - emaMouth);
+        emaHeadTilt = emaHeadTilt + alpha * (rawTiltDeg - emaHeadTilt);
+
+        // Round head tilt for clean UI readout
+        const cleanTilt = Math.abs(emaHeadTilt) < 0.3 ? 0.0 : emaHeadTilt;
+
+        return {
+            browLift: emaBrow,
+            mouthOpen: emaMouth,
+            headTilt: cleanTilt
+        };
+    }
+
+    // Hand skeleton connection pairs (MediaPipe Hand standard)
+    const HAND_CONNECTIONS = [
+        [0,1],[1,2],[2,3],[3,4], // thumb
+        [0,5],[5,6],[6,7],[7,8], // index
+        [0,9],[9,10],[10,11],[11,12], // middle
+        [0,13],[13,14],[14,15],[15,16], // ring
+        [0,17],[17,18],[18,19],[19,20], // pinky
+        [5,9],[9,13],[13,17] // palm
+    ];
+
+    // Pose body connection pairs (upper body subset for sign language)
+    const POSE_CONNECTIONS_UPPER = [
+        [11,12], // shoulders
+        [11,13],[13,15], // left arm
+        [12,14],[14,16], // right arm
+        [11,23],[12,24], // torso
+    ];
+
+    /** Draw real or simulated landmark tracking dots on the canvas overlay. */
     function startCanvasOverlayLoop() {
         const W = landmarkCanvas.clientWidth || 450;
         const H = landmarkCanvas.clientHeight || 380;
@@ -153,23 +408,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
         let frameCount = 0;
 
-        // Simulated landmark positions for hand/face when no real MediaPipe data available
+        // Simulated landmark positions (fallback when no real MediaPipe data)
         function generateSimLandmarks(t) {
             const cx = W * 0.5, cy = H * 0.55;
             const pts = [];
-            // Right hand (21 landmarks)
             for (let i = 0; i < 21; i++) {
                 const angle = (i / 21) * Math.PI * 2 + t * 0.6;
                 const r = 28 + (i % 5) * 8 + Math.sin(t * 1.1 + i) * 6;
                 pts.push({ x: cx + 55 + Math.cos(angle) * r, y: cy + Math.sin(angle) * r, g: "hand" });
             }
-            // Left hand (21 landmarks)
             for (let i = 0; i < 21; i++) {
                 const angle = (i / 21) * Math.PI * 2 - t * 0.5;
                 const r = 26 + (i % 5) * 7 + Math.cos(t * 0.9 + i) * 5;
                 pts.push({ x: cx - 55 + Math.cos(angle) * r, y: cy + Math.sin(angle) * r, g: "hand" });
             }
-            // Face mesh subset (16 key landmarks)
             for (let i = 0; i < 16; i++) {
                 const angle = (i / 16) * Math.PI * 2;
                 const r = 40 + Math.sin(t * 0.7 + i * 0.5) * 4;
@@ -182,43 +434,79 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!cameraActive) return;
             frameCount++;
             capturedFrameCount = frameCount;
-
             ctx.clearRect(0, 0, W, H);
-            const t = frameCount * 0.04;
 
-            // Draw simulated landmark tracking dots
-            const landmarks = generateSimLandmarks(t);
+            // ── REAL TRACKING: Use MediaPipe Holistic results ──
+            if (useRealTracking && latestMPResults) {
+                const res = latestMPResults;
 
-            // Draw connection lines (subtle)
-            ctx.strokeStyle = "rgba(0, 229, 255, 0.15)";
-            ctx.lineWidth = 1;
-            for (let i = 1; i < 21; i++) {
-                const a = landmarks[i - 1], b = landmarks[i];
-                ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+                // Draw Pose landmarks (upper body — cyan/teal)
+                if (res.poseLandmarks) {
+                    drawLandmarkSet(res.poseLandmarks, W, H, "rgba(0, 229, 255, 0.55)", 3, POSE_CONNECTIONS_UPPER);
+                }
+
+                // Draw Left Hand landmarks (bright cyan)
+                if (res.leftHandLandmarks) {
+                    drawLandmarkSet(res.leftHandLandmarks, W, H, "rgba(0, 229, 255, 0.85)", 2.5, HAND_CONNECTIONS);
+                }
+
+                // Draw Right Hand landmarks (bright cyan)
+                if (res.rightHandLandmarks) {
+                    drawLandmarkSet(res.rightHandLandmarks, W, H, "rgba(0, 229, 255, 0.85)", 2.5, HAND_CONNECTIONS);
+                }
+
+                // Draw Face Mesh landmarks (purple, smaller dots)
+                if (res.faceLandmarks) {
+                    // Draw a subset of face mesh connections (jaw, eyebrows, lips)
+                    res.faceLandmarks.forEach(lm => {
+                        ctx.beginPath();
+                        ctx.arc(lm.x * W, lm.y * H, 1.2, 0, Math.PI * 2);
+                        ctx.fillStyle = "rgba(124, 77, 255, 0.5)";
+                        ctx.fill();
+                    });
+                }
+
+                // Compute & update Real Action Unit HUD from face mesh
+                const aus = computeRealAUs(res.faceLandmarks);
+                auBarEyebrow.style.width = `${aus.browLift * 100}%`;
+                auBarMouth.style.width = `${aus.mouthOpen * 100}%`;
+                auValHead.textContent = `${aus.headTilt.toFixed(1)}°`;
+
+            } else {
+                // ── SIMULATED FALLBACK ──
+                const t = frameCount * 0.04;
+                const landmarks = generateSimLandmarks(t);
+
+                // Connection lines
+                ctx.strokeStyle = "rgba(0, 229, 255, 0.15)";
+                ctx.lineWidth = 1;
+                for (let i = 1; i < 21; i++) {
+                    const a = landmarks[i - 1], b = landmarks[i];
+                    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+                }
+                for (let i = 22; i < 42; i++) {
+                    const a = landmarks[i - 1], b = landmarks[i];
+                    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+                }
+
+                // Tracking dots
+                landmarks.forEach(pt => {
+                    const color = pt.g === "hand" ? "rgba(0, 229, 255, 0.85)" : "rgba(124, 77, 255, 0.7)";
+                    const radius = pt.g === "hand" ? 2.5 : 1.8;
+                    ctx.beginPath();
+                    ctx.arc(pt.x, pt.y, radius, 0, Math.PI * 2);
+                    ctx.fillStyle = color;
+                    ctx.fill();
+                });
+
+                // Simulated AU HUD
+                const browLift = 0.2 + Math.abs(Math.sin(t)) * 0.6;
+                const mouthOp = 0.1 + Math.abs(Math.cos(t * 1.2)) * 0.4;
+                const headTilt = (Math.sin(t * 0.8) * 6.5).toFixed(1);
+                auBarEyebrow.style.width = `${browLift * 100}%`;
+                auBarMouth.style.width = `${mouthOp * 100}%`;
+                auValHead.textContent = `${headTilt}°`;
             }
-            for (let i = 22; i < 42; i++) {
-                const a = landmarks[i - 1], b = landmarks[i];
-                ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
-            }
-
-            // Draw tracking dots
-            landmarks.forEach(pt => {
-                const color = pt.g === "hand" ? "rgba(0, 229, 255, 0.85)" : "rgba(124, 77, 255, 0.7)";
-                const radius = pt.g === "hand" ? 2.5 : 1.8;
-                ctx.beginPath();
-                ctx.arc(pt.x, pt.y, radius, 0, Math.PI * 2);
-                ctx.fillStyle = color;
-                ctx.fill();
-            });
-
-            // Update Real-Time Action Unit HUD
-            const browLift = 0.2 + Math.abs(Math.sin(t)) * 0.6;
-            const mouthOp = 0.1 + Math.abs(Math.cos(t * 1.2)) * 0.4;
-            const headTilt = (Math.sin(t * 0.8) * 6.5).toFixed(1);
-
-            auBarEyebrow.style.width = `${browLift * 100}%`;
-            auBarMouth.style.width = `${mouthOp * 100}%`;
-            auValHead.textContent = `${headTilt}°`;
 
             renderFrameId = requestAnimationFrame(render);
         }
@@ -230,6 +518,43 @@ document.addEventListener("DOMContentLoaded", () => {
     // 6. Simulate Signing & Live Translation Generation
     // Comprehensive multi-domain demo corpus covering all 62 CESLR vocabulary glosses
     const demoSentences = [
+        // ── Dialogue / ውይይት (General Conversation) ────────────────
+        {
+            am: "ጤና ይስጥልኝ! እንደምን ነዎት?",
+            om: "Akkam jirtu! Naguma?",
+            en: "Hello! How are you?",
+            conf: 98.2, domain: "dialogue", glosses: ["ሰላምታ", "ጤና", "ነዎት"]
+        },
+        {
+            am: "ስሜ ዳዊት ነው፤ ያንተ ስም ማን ነው?",
+            om: "Maqaan koo Daawit; maqaan kee eenyu?",
+            en: "My name is Dawit; what is your name?",
+            conf: 97.6, domain: "dialogue", glosses: ["ስም", "ማን", "ነው"]
+        },
+        {
+            am: "ዛሬ የአየር ሁኔታው ደስ ይላል፤ ውጪ እንዘዋወር?",
+            om: "Har'a haalli qilleensaa gaariidha; ala deemuun hoo?",
+            en: "The weather is nice today; shall we go for a walk?",
+            conf: 95.3, domain: "dialogue", glosses: ["ዛሬ", "የአየር_ሁኔታ", "ውጪ"]
+        },
+        {
+            am: "ይቅርታ ልጠይቅዎ፤ ወደ ሜርካቶ የሚወስደው መንገድ የት ነው?",
+            om: "Dhiifama; karaan gara Markaatoo geessu eessa?",
+            en: "Excuse me; which way goes to Merkato?",
+            conf: 96.1, domain: "dialogue", glosses: ["ይቅርታ", "መንገድ", "የት"]
+        },
+        {
+            am: "አመሰግናለሁ! በጣም ረድተውኛል።",
+            om: "Galatoomaa! Baay'ee na gargaartan.",
+            en: "Thank you! You have helped me a lot.",
+            conf: 98.5, domain: "dialogue", glosses: ["አመሰግናለሁ", "ረድተ", "በጣም"]
+        },
+        {
+            am: "ቡና እንጠጣ? ቡና ቤት ቅርብ አለ።",
+            om: "Buna dhugna? Manni bunaa dhihaadha.",
+            en: "Shall we have coffee? There is a coffee shop nearby.",
+            conf: 97.0, domain: "dialogue", glosses: ["ቡና", "ቡና_ቤት", "ቅርብ"]
+        },
         // ── Healthcare / ሕክምና ──────────────────────────────────────────
         {
             am: "ዶክተር ላለፉት ሦስት ቀናት ብርቱ የራስ ምታት አለኝ።",
@@ -328,15 +653,21 @@ document.addEventListener("DOMContentLoaded", () => {
         const latencyMs = 150 + Math.floor(Math.random() * 170);
         await new Promise(r => setTimeout(r, latencyMs));
 
-        sentenceIdx = (sentenceIdx + 1) % demoSentences.length;
-        const item = demoSentences[sentenceIdx];
+        sentenceIdx++;
+        const activeDomain = store.getState().activeDomain;
+        const domainMatches = demoSentences.filter(s => s.domain === activeDomain);
+        const pool = domainMatches.length > 0 ? domainMatches : demoSentences;
+        const item = pool[sentenceIdx % pool.length];
+        
         const lang = store.getState().targetLanguage;
         const translatedText = item[lang] || item.am;
+        // Subtitle: English if target is Amharic/Oromo; Amharic if target is English
+        const subtitleText = lang === "en" ? item.am : item.en;
 
         // Update translation output
         liveTranslatedText.textContent = translatedText;
         liveTranslatedText.style.opacity = "1";
-        subTranslatedText.textContent = item.en;
+        subTranslatedText.textContent = subtitleText;
 
         // Color-coded confidence
         const confColor = item.conf >= 96 ? "#00e676" : item.conf >= 93 ? "#ffca28" : "#ff5252";
@@ -386,12 +717,50 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
 
-    // 7. Vocalize Button
-    btnVocalize.addEventListener("click", () => {
+    // 7. Vocalize Button (Read Aloud)
+    const originalVocalizeHTML = btnVocalize.innerHTML;
+    let isSpeaking = false;
+
+    function handleVocalize() {
+        if (isSpeaking) {
+            sdk.stopSpeaking();
+            btnVocalize.innerHTML = originalVocalizeHTML;
+            btnVocalize.style.background = "";
+            btnVocalize.style.borderColor = "";
+            btnVocalize.style.color = "";
+            isSpeaking = false;
+            return;
+        }
+
         const text = liveTranslatedText.textContent;
         const lang = store.getState().targetLanguage;
-        sdk.speakAloud(text, lang);
-    });
+
+        if (!text || !text.trim()) return;
+
+        isSpeaking = true;
+        btnVocalize.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 5px;"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>Speaking…`;
+        btnVocalize.style.background = "var(--sit-primary)";
+        btnVocalize.style.borderColor = "var(--sit-primary)";
+        btnVocalize.style.color = "#FFFFFF";
+
+        sdk.speakAloud(
+            text,
+            lang,
+            () => {
+                // Started
+            },
+            () => {
+                // Completed
+                btnVocalize.innerHTML = originalVocalizeHTML;
+                btnVocalize.style.background = "";
+                btnVocalize.style.borderColor = "";
+                btnVocalize.style.color = "";
+                isSpeaking = false;
+            }
+        );
+    }
+
+    btnVocalize.addEventListener("click", handleVocalize);
 
     // 8. Hearing Interlocutor: Speech-to-Text & Avatar Signing
     btnSendToAvatar.addEventListener("click", () => {
@@ -715,8 +1084,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
                 if (!resp.ok) throw new Error(`API ${resp.status}`);
                 const data = await resp.json();
+                const targetLang = store.getState().targetLanguage;
                 liveTranslatedText.textContent = data.translated_text;
                 liveTranslatedText.style.opacity = "1";
+                
+                // Perfectly matched subtitle text from API or fallback lookup
+                const subText = data.subtitle_text || (targetLang === "en" ? (data.am || "ጤና ይስጥልኝ እንደምን ነዎት? ሰላም ነው?") : (data.en || "Hello, how are you? Is everything well?"));
+                subTranslatedText.textContent = subText;
+                
                 const confPct = (data.confidence_score * 100).toFixed(1);
                 const confClr = data.confidence_score >= 0.96 ? "#00e676" : data.confidence_score >= 0.93 ? "#ffca28" : "#ff5252";
                 confidenceBadge.textContent = `Confidence: ${confPct}%`;
@@ -733,13 +1108,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 const picked = pool[Math.floor(Math.random() * pool.length)];
                 const lang = store.getState().targetLanguage;
                 const translatedText = picked[lang] || picked.am;
+                const subText = lang === "en" ? picked.am : picked.en;
 
                 // Simulate extraction delay for realism
                 await new Promise(r => setTimeout(r, 200 + Math.random() * 180));
 
                 liveTranslatedText.textContent = translatedText;
                 liveTranslatedText.style.opacity = "1";
-                subTranslatedText.textContent = picked.en;
+                subTranslatedText.textContent = subText;
                 const confClr = picked.conf >= 96 ? "#00e676" : picked.conf >= 93 ? "#ffca28" : "#ff5252";
                 confidenceBadge.textContent = `Confidence: ${picked.conf}%`;
                 confidenceBadge.style.background = `${confClr}18`;

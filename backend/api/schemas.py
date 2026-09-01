@@ -39,6 +39,7 @@ class TranslationResponse(BaseModel):
     requires_human_verification: bool
     frame_count: int
     matched_template: Optional[str] = None
+    subtitle_text: Optional[str] = None
 
 
 # ==========================================

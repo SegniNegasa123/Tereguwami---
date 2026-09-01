@@ -6,7 +6,7 @@ class StateStore {
     constructor() {
         this.state = {
             targetLanguage: "am", // "am", "om", "en"
-            activeDomain: "healthcare", // "healthcare", "legal", "education", "civic_banking"
+            activeDomain: "dialogue", // "dialogue", "healthcare", "legal", "education", "civic_banking"
             highStakesMode: false,
             autoVocalize: true,
             isStreaming: false,

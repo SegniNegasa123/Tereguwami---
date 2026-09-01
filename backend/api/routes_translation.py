@@ -58,6 +58,7 @@ async def translate_keypoints(
 
     return TranslationResponse(
         translated_text=constrained_result["final_text"],
+        subtitle_text=raw_translation.get("subtitle_text"),
         target_language=payload.target_language,
         confidence_score=constrained_result["confidence_score"],
         status=raw_translation["status"],
@@ -130,6 +131,7 @@ async def translate_single_frame(
 
     return TranslationResponse(
         translated_text=constrained_result["final_text"],
+        subtitle_text=raw_translation.get("subtitle_text"),
         target_language=payload.target_language,
         confidence_score=constrained_result["confidence_score"],
         status=raw_translation["status"],
@@ -139,4 +141,43 @@ async def translate_single_frame(
         frame_count=20,
         matched_template=raw_translation.get("matched_template")
     )
+
+
+@router.get("/vocalize")
+async def vocalize_text(text: str, lang: str = "am"):
+    """
+    Synthesizes and streams crystal-clear audio/mpeg for Amharic, Afaan Oromoo, or English.
+    Bypasses browser referer anti-hotlink blocking with fast edge streaming.
+    """
+    import urllib.parse
+    import urllib.request
+    from fastapi.responses import Response
+
+    clean_text = (text or "").strip()
+    if not clean_text:
+        raise HTTPException(status_code=400, detail="Text parameter cannot be empty")
+
+    lang_code = "om" if lang == "om" else ("am" if lang == "am" else "en")
+    encoded = urllib.parse.quote(clean_text)
+    tts_url = f"https://translate.google.com/translate_tts?ie=UTF-8&tl={lang_code}&client=tw-ob&q={encoded}"
+
+    req = urllib.request.Request(
+        tts_url,
+        headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            audio_bytes = resp.read()
+            return Response(
+                content=audio_bytes,
+                media_type="audio/mpeg",
+                headers={
+                    "Cache-Control": "public, max-age=86400",
+                    "Accept-Ranges": "bytes",
+                    "Content-Disposition": "inline"
+                }
+            )
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"TTS synthesis failed: {str(e)}")
+
 

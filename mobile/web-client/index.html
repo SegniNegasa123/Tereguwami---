@@ -11,6 +11,9 @@
     <link rel="stylesheet" href="styles.css">
     <!-- Three.js CDN for embedded generative avatar -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- MediaPipe CDNs for real-time camera tracking -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js" crossorigin="anonymous"></script>
 </head>
 
 <body>
@@ -40,7 +43,8 @@
             <div class="control-item">
                 <label for="domain-select">Domain</label>
                 <select id="domain-select">
-                    <option value="healthcare" selected>Healthcare / ሕክምና</option>
+                    <option value="dialogue" selected>Dialogue / ውይይት</option>
+                    <option value="healthcare">Healthcare / ሕክምና</option>
                     <option value="legal">Legal & Court / ፍርድ ቤት</option>
                     <option value="education">Education / ትምህርት</option>
                     <option value="civic_banking">Banking / ባንክ</option>
@@ -150,14 +154,13 @@
                     <div class="translation-output-card">
                         <div class="translation-meta">
                             <span class="output-lang-tag" id="current-lang-tag">Amharic (አማርኛ)</span>
-                            <div class="confidence-badge" id="confidence-badge">Confidence: 96.4%</div>
-                            <span class="latency-tag">Latency: ~205ms</span>
+                            <div class="confidence-badge" id="confidence-badge">Confidence: 98.2%</div>
+                            <span class="latency-tag">Latency: ~195ms</span>
                         </div>
 
                         <div class="translation-text-box">
-                            <p id="live-translated-text" class="translated-text">ዶክተር ላለፉት ሦስት ቀናት ብርቱ የራስ ምታት አለኝ።</p>
-                            <p id="sub-translated-text" class="sub-translated-text">Doctor, I have had a severe headache
-                                for the past three days.</p>
+                            <p id="live-translated-text" class="translated-text">ጤና ይስጥልኝ እንደምን ነዎት? ሰላም ነው?</p>
+                            <p id="sub-translated-text" class="sub-translated-text">Hello, how are you? Is everything well?</p>
                         </div>
 
                         <div class="output-actions">
@@ -203,7 +206,7 @@
                             <button id="btn-mic-input" class="mic-btn" title="Speak through microphone"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg></button>
                             <input type="text" id="hearing-text-input"
                                 placeholder="Type response in Amharic, Afaan Oromo, or English..."
-                                value="መድኃኒቱን ከምግብ በኋላ ይውሰዱ።">
+                                value="ሰላም ነኝ፣ አመሰግናለሁ! እንዴት ልርዳዎት?">
                             <button id="btn-send-to-avatar" class="send-btn">Sign <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-left: 2px;"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>
                         </div>
                         <div class="preset-chips">
@@ -223,12 +226,12 @@
                 <div class="messages-container" id="messages-container">
                     <div class="msg-bubble signer">
                         <span class="msg-sender">Signer (EthSL · አማርኛ)</span>
-                        <span class="msg-body">ዶክተር ላለፉት ሦስት ቀናት ብርቱ የራስ ምታት አለኝ።</span>
+                        <span class="msg-body">ጤና ይስጥልኝ እንደምን ነዎት? ሰላም ነው?</span>
                         <span class="msg-time">14:20:12</span>
                     </div>
                     <div class="msg-bubble hearing">
-                        <span class="msg-sender">Clinician</span>
-                        <span class="msg-body">መድኃኒቱን ከምግብ በኋላ ይውሰዱ።</span>
+                        <span class="msg-sender">Interlocutor</span>
+                        <span class="msg-body">ሰላም ነኝ፣ አመሰግናለሁ! እንዴት ልርዳዎት?</span>
                         <span class="msg-time">14:20:25</span>
                     </div>
                 </div>
