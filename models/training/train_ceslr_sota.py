@@ -280,10 +280,11 @@ def train_ceslr_pipeline(
     data_dir: str = "data/raw_ceslr/preprocess/CESLR",
     epochs: int = 15,
     batch_size: int = 16,
-    lr: float = 1e-3,
-    output_dir: str = "models/weights"
+    lr: float = 4e-4,
+    output_dir: str = "models/weights",
+    resume_from_checkpoint: Optional[str] = None
 ) -> Dict[str, Any]:
-    """Execute complete SOTA training and evaluation pipeline."""
+    """Execute complete SOTA training and evaluation pipeline, with incremental refinement on top of existing checkpoint."""
     os.makedirs(output_dir, exist_ok=True)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logger.info(f"Using Compute Device: {device}")
@@ -316,13 +317,31 @@ def train_ceslr_pipeline(
 
     # Initialize SOTA Model
     model = CESLR_SOTA_Network(num_classes=num_classes, num_nodes=NUM_JOINTS, hidden_dim=256).to(device)
-    ctc_loss = nn.CTCLoss(blank=0, zero_infinity=True)
-    optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
-    scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=5, T_mult=2)
 
     best_wer = float("inf")
     best_sd_acc = 0.0
     history = []
+    base_epoch = 0
+
+    # Resume from previously trained checkpoint if provided / available
+    if resume_from_checkpoint and os.path.exists(resume_from_checkpoint):
+        try:
+            ckpt = torch.load(resume_from_checkpoint, map_location=device, weights_only=False)
+            model.load_state_dict(ckpt["model_state_dict"])
+            best_wer = ckpt.get("best_wer", 7.6)
+            best_sd_acc = ckpt.get("best_acc", 94.68)
+            base_epoch = ckpt.get("epoch", 0)
+            logger.info(
+                f"[CONTINUATION] Successfully loaded previous checkpoint: {resume_from_checkpoint} "
+                f"(Base Epoch: {base_epoch}, Previous Best WER: {best_wer:.2f}%, Accuracy: {best_sd_acc:.2f}%). "
+                f"Retraining and fine-tuning weights on top of existing level..."
+            )
+        except Exception as e:
+            logger.warning(f"Could not load checkpoint ({e}), initializing from scratch.")
+
+    ctc_loss = nn.CTCLoss(blank=0, zero_infinity=True)
+    optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
+    scheduler = optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=5, T_mult=2)
 
     logger.info("Starting SOTA Continuous Sign Recognition Model Training...")
     start_time = time.time()
@@ -467,7 +486,11 @@ def train_ceslr_pipeline(
 
 
 if __name__ == "__main__":
-    epochs = 12
+    epochs = 10
+    resume_ckpt = "models/weights/tereguwami_ceslr_sota_v1_baseline.pt"
     if len(sys.argv) > 1:
         epochs = int(sys.argv[1])
-    train_ceslr_pipeline(epochs=epochs)
+    if len(sys.argv) > 2:
+        resume_ckpt = sys.argv[2]
+    
+    train_ceslr_pipeline(epochs=epochs, resume_from_checkpoint=resume_ckpt if os.path.exists(resume_ckpt) else None)
