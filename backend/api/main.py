@@ -117,8 +117,8 @@ async def get_product_app():
             content = content.replace('href="styles.css"', f'href="/client/styles.css?v={int(time.time())}"')
             content = content.replace('src="avatar_embed.js"', f'src="/client/avatar_embed.js?v={int(time.time())}"')
             content = content.replace('src="app.js"', f'src="/client/app.js?v={int(time.time())}"')
-            content = content.replace('src="../shared-components/tereguwami_sdk.js"', 'src="/shared-components/tereguwami_sdk.js"')
-            content = content.replace('src="../shared-components/state_store.js"', 'src="/shared-components/state_store.js"')
+            content = content.replace('src="../shared-components/tereguwami_sdk.js"', f'src="/shared-components/tereguwami_sdk.js?v={int(time.time())}"')
+            content = content.replace('src="../shared-components/state_store.js"', f'src="/shared-components/state_store.js?v={int(time.time())}"')
             return HTMLResponse(content=content)
     return HTMLResponse(content="<h1>Product app not found</h1>", status_code=404)
 

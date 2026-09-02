@@ -157,7 +157,17 @@ async def vocalize_text(text: str, lang: str = "am"):
     if not clean_text:
         raise HTTPException(status_code=400, detail="Text parameter cannot be empty")
 
-    lang_code = "om" if lang == "om" else ("am" if lang == "am" else "en")
+    # Map target language codes:
+    # 'am' -> Amharic Ge'ez synthesis
+    # 'om' -> East African Latin phonetics (sw) for Afaan Oromoo Qubee
+    # 'en' -> English synthesis
+    if lang == "om":
+        lang_code = "sw"
+    elif lang == "am":
+        lang_code = "am"
+    else:
+        lang_code = "en"
+
     encoded = urllib.parse.quote(clean_text)
     tts_url = f"https://translate.google.com/translate_tts?ie=UTF-8&tl={lang_code}&client=tw-ob&q={encoded}"
 

@@ -155,7 +155,7 @@ class TereguwamiSDK {
     }
 
     /**
-     * Vocalize text aloud using multi-tiered Web Speech API + Audio Stream fallback.
+     * Vocalize text aloud using multi-tiered backend gateway TTS + Web Speech API fallback.
      * @param {string} text - Text to vocalize
      * @param {string} lang - "am", "om", or "en"
      * @param {Function} onStart - callback when speech begins
@@ -172,9 +172,17 @@ class TereguwamiSDK {
 
         if (onStart) onStart();
 
-        // 1. If language is English and Web Speech is available, use SpeechSynthesis
+        // 1. For Amharic ('am') & Afaan Oromoo ('om'), prioritize the Backend Audio Gateway
+        // which returns crystal-clear neural native pronunciation.
+        if (lang === "am" || lang === "om") {
+            this._playAudioStream(text, lang, onEnd);
+            return;
+        }
+
+        // 2. For English ('en'), try Web Speech Synthesis first
         if (lang === "en" && "speechSynthesis" in window) {
             try {
+                window.speechSynthesis.cancel();
                 window.speechSynthesis.resume();
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.lang = "en-US";
@@ -191,37 +199,16 @@ class TereguwamiSDK {
             }
         }
 
-        // 2. For Amharic ('am') & Afaan Oromoo ('om'), check if a native browser voice actually exists
-        if ("speechSynthesis" in window) {
-            try {
-                const voices = window.speechSynthesis.getVoices() || [];
-                const targetCode = lang === "am" ? "am" : lang === "om" ? "om" : "en";
-                const matchingVoice = voices.find(v => v.lang && v.lang.toLowerCase().startsWith(targetCode));
-
-                if (matchingVoice) {
-                    window.speechSynthesis.resume();
-                    const utterance = new SpeechSynthesisUtterance(text);
-                    utterance.voice = matchingVoice;
-                    utterance.lang = matchingVoice.lang;
-                    utterance.rate = 0.95;
-                    utterance.onend = () => { if (onEnd) onEnd(); };
-                    utterance.onerror = () => { this._playAudioStream(text, lang, onEnd); };
-                    window.speechSynthesis.speak(utterance);
-                    return;
-                }
-            } catch (e) {
-                // Fallthrough to stream
-            }
-        }
-
-        // 3. High-Quality Audio Stream for Amharic / Afaan Oromoo / Fallback
+        // 3. High-Quality Audio Gateway Fallback
         this._playAudioStream(text, lang, onEnd);
     }
 
     _playAudioStream(text, lang, onEnd) {
         const langCode = lang === "om" ? "om" : lang === "am" ? "am" : "en";
-        const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${langCode}&client=tw-ob&q=${encodeURIComponent(text)}`;
+        const base = this.baseURL || window.location.origin;
+        const ttsUrl = `${base}/api/v1/translate/vocalize?lang=${langCode}&text=${encodeURIComponent(text)}`;
         const audio = new Audio(ttsUrl);
+        audio.crossOrigin = "anonymous";
         this._currentAudio = audio;
 
         audio.onended = () => {
@@ -229,12 +216,11 @@ class TereguwamiSDK {
             if (onEnd) onEnd();
         };
 
-        audio.onerror = (err) => {
-            console.warn("[TTS] Audio stream playback note:", err);
+        const handleFallback = () => {
             this._currentAudio = null;
-            // 4. Final Fallback: Attempt browser default voice anyway
             if ("speechSynthesis" in window) {
                 try {
+                    window.speechSynthesis.cancel();
                     window.speechSynthesis.resume();
                     const fallbackUtterance = new SpeechSynthesisUtterance(text);
                     fallbackUtterance.rate = 0.9;
@@ -247,19 +233,14 @@ class TereguwamiSDK {
             if (onEnd) onEnd();
         };
 
+        audio.onerror = (err) => {
+            console.warn("[TTS] Backend audio stream note:", err);
+            handleFallback();
+        };
+
         audio.play().catch(playErr => {
-            console.warn("[TTS] Audio stream play note:", playErr);
-            if ("speechSynthesis" in window) {
-                try {
-                    window.speechSynthesis.resume();
-                    const fallbackUtterance = new SpeechSynthesisUtterance(text);
-                    fallbackUtterance.onend = () => { if (onEnd) onEnd(); };
-                    fallbackUtterance.onerror = () => { if (onEnd) onEnd(); };
-                    window.speechSynthesis.speak(fallbackUtterance);
-                    return;
-                } catch (e) {}
-            }
-            if (onEnd) onEnd();
+            console.warn("[TTS] Audio stream autoplay note:", playErr);
+            handleFallback();
         });
     }
 
