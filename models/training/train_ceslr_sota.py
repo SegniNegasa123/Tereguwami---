@@ -289,6 +289,14 @@ def train_ceslr_pipeline(
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logger.info(f"Using Compute Device: {device}")
 
+    # Set CPU optimization threads
+    if device.type == "cpu":
+        torch.set_num_threads(min(8, os.cpu_count() or 4))
+
+    # Default to existing production model checkpoint if not specified
+    if resume_from_checkpoint is None and os.path.exists(os.path.join(output_dir, "tereguwami_ceslr_sota.pt")):
+        resume_from_checkpoint = os.path.join(output_dir, "tereguwami_ceslr_sota.pt")
+
     # Load CESLR dataset files
     gloss_dict_path = os.path.join(data_dir, "gloss_dict.npy")
     train_info_path = os.path.join(data_dir, "train_info.npy")
@@ -403,17 +411,32 @@ def train_ceslr_pipeline(
         dev_acc = max(0.0, min(100.0, 100.0 - (dev_wer * 0.7)))
         logger.info(f"Epoch [{epoch:02d}/{epochs:02d}] | Train Loss: {avg_train_loss:.4f} | Dev WER: {dev_wer:.2f}% | Estimated Acc: {dev_acc:.2f}%")
 
-        if dev_wer < best_wer:
-            best_wer = dev_wer
-            best_sd_acc = dev_acc
-            # Save checkpoint
+        if dev_wer < best_wer or epoch == epochs:
+            if dev_wer < best_wer:
+                best_wer = dev_wer
+                best_sd_acc = dev_acc
+            
+            # Invert gloss_dict to obtain id -> gloss mapping
+            id_to_gloss = {}
+            for gloss, token_ids in gloss_dict.items():
+                if isinstance(token_ids, (list, tuple)):
+                    for tid in token_ids:
+                        id_to_gloss[int(tid)] = gloss
+                elif isinstance(token_ids, int):
+                    id_to_gloss[int(token_ids)] = gloss
+            
+            # Save comprehensive production checkpoint
             save_path = os.path.join(output_dir, "tereguwami_ceslr_sota.pt")
             torch.save({
                 "epoch": epoch,
                 "model_state_dict": model.state_dict(),
                 "optimizer_state_dict": optimizer.state_dict(),
                 "num_classes": num_classes,
+                "num_nodes": NUM_JOINTS,
+                "input_channels": INPUT_CHANNELS,
+                "hidden_dim": 256,
                 "gloss_dict": gloss_dict,
+                "id_to_gloss": id_to_gloss,
                 "best_wer": best_wer,
                 "best_acc": best_sd_acc
             }, save_path)

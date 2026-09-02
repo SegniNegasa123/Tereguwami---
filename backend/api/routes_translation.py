@@ -49,11 +49,12 @@ async def translate_keypoints(
     )
 
     # Apply safety decoding constraints (§8.4)
+    pred_glosses = raw_translation.get("predicted_glosses", ["ESL_NEURAL_SIGN"])
     constrained_result = constrained_decoder.decode_with_constraints(
         candidate_text=raw_translation["translated_text"],
         confidence_score=raw_translation["confidence_score"],
-        recognized_glosses=[raw_translation.get("matched_template", "SIGN")],
-        domain=payload.domain_hint or "everyday_civic"
+        recognized_glosses=pred_glosses,
+        domain=payload.domain_hint or "dialogue"
     )
 
     return TranslationResponse(
@@ -66,7 +67,7 @@ async def translate_keypoints(
         requires_clarification=constrained_result["requires_clarification"],
         requires_human_verification=constrained_result["requires_human_verification"] or payload.high_stakes_verification,
         frame_count=T,
-        matched_template=raw_translation.get("matched_template")
+        matched_template=", ".join(pred_glosses)
     )
 
 
@@ -122,11 +123,12 @@ async def translate_single_frame(
         domain_hint=payload.domain_hint
     )
 
+    pred_glosses = raw_translation.get("predicted_glosses", ["ESL_NEURAL_SIGN"])
     constrained_result = constrained_decoder.decode_with_constraints(
         candidate_text=raw_translation["translated_text"],
         confidence_score=raw_translation["confidence_score"],
-        recognized_glosses=[raw_translation.get("matched_template", "SIGN")],
-        domain=payload.domain_hint or "everyday_civic"
+        recognized_glosses=pred_glosses,
+        domain=payload.domain_hint or "dialogue"
     )
 
     return TranslationResponse(
@@ -139,7 +141,7 @@ async def translate_single_frame(
         requires_clarification=constrained_result["requires_clarification"],
         requires_human_verification=constrained_result["requires_human_verification"] or payload.high_stakes_verification,
         frame_count=20,
-        matched_template=raw_translation.get("matched_template")
+        matched_template=", ".join(pred_glosses)
     )
 
 
