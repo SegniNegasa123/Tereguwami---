@@ -8,7 +8,7 @@ class StateStore {
             targetLanguage: "am", // "am", "om", "en"
             activeDomain: "dialogue", // "dialogue", "healthcare", "legal", "education", "civic_banking"
             highStakesMode: false,
-            autoVocalize: true,
+            autoVocalize: false,
             isStreaming: false,
             currentHypothesis: "",
             confidence: 0.0,

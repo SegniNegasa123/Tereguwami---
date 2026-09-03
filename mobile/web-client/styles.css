@@ -742,6 +742,90 @@ select:focus {
     font-weight: 600;
 }
 
+/* ── Avatar Subtitles (Dynamic Subtitle Strip) ────────────────────────────── */
+.avatar-subtitle-container,
+.avatar-subtitle {
+    position: relative;
+    background: #0A2522;
+    border: 1px solid rgba(10, 37, 34, 0.25);
+    border-radius: var(--radius-md);
+    padding: 12px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    box-shadow: var(--shadow-card);
+    transition: all var(--trans-normal);
+    min-height: 64px;
+    justify-content: center;
+}
+
+.avatar-subtitle-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.subtitle-indicator-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #00e5ff;
+    display: inline-block;
+    box-shadow: 0 0 8px rgba(0, 229, 255, 0.6);
+    animation: sub-pulse 2s infinite ease-in-out;
+}
+
+@keyframes sub-pulse {
+    0%, 100% { opacity: 0.5; transform: scale(0.9); }
+    50% { opacity: 1; transform: scale(1.15); }
+}
+
+.subtitle-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #8bb5b0;
+}
+
+#avatar-subtitle-text {
+    font-family: var(--font-geez-serif, 'Noto Serif Ethiopic', serif);
+    font-size: 15px;
+    font-weight: 600;
+    color: #FFFFFF;
+    line-height: 1.45;
+    letter-spacing: 0.01em;
+    transition: color var(--trans-fast);
+}
+
+.avatar-subtitle-container.speaking #avatar-subtitle-text,
+.avatar-subtitle-container.active #avatar-subtitle-text {
+    color: #6ee7b7;
+}
+
+.avatar-subtitle-container.listening #avatar-subtitle-text {
+    color: #fca5a5;
+}
+
+.mic-btn.active {
+    background: #b91c1c !important;
+    border-color: #ef4444 !important;
+    color: #FFFFFF !important;
+    animation: mic-pulse 1.5s infinite;
+}
+
+@keyframes mic-pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
+    }
+    70% {
+        box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+    }
+}
+
 /* ── Hearing User Input ─────────────────────────────────────────────────────── */
 .hearing-input-card {
     background: var(--bg-surface-sunken);

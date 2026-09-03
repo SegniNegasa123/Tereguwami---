@@ -4,7 +4,7 @@
  * personalization studio, and silent speech interface.
  */
 
-document.addEventListener("DOMContentLoaded", () => {
+if (document) document.addEventListener("DOMContentLoaded", () => {
     // 1. Initialize Core SDK & State Store
     const sdk = new TereguwamiSDK(window.location.origin);
     const store = new StateStore();
@@ -51,9 +51,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 // Pose: 33 landmarks [0..32]
                 if (results.poseLandmarks) {
-                    for (let i = 0; i < Math.min(results.poseLandmarks.length, 33); i++) {
-                        const lm = results.poseLandmarks[i];
+                    const pl = results.poseLandmarks;
+                    for (let i = 0; i < Math.min(pl.length, 33); i++) {
+                        const lm = pl[i];
                         buf[i * 3] = lm.x; buf[i * 3 + 1] = lm.y; buf[i * 3 + 2] = lm.z;
+                    }
+                    
+                    if (isMimicModeActive && avatarScene && avatarScene.skeleton && avatarScene.skeleton.rArm) {
+                        // Directly map shoulder/elbow angles for live avatar mimicking
+                        const rShoulder = pl[12], rElbow = pl[14], rWrist = pl[16];
+                        if (rShoulder && rElbow && rWrist) {
+                            avatarScene.skeleton.rArm.rotation.z = Math.atan2(rElbow.y - rShoulder.y, rElbow.x - rShoulder.x) - Math.PI/2;
+                            avatarScene.skeleton.rElbow.rotation.z = Math.atan2(rWrist.y - rElbow.y, rWrist.x - rElbow.x) - Math.PI/2;
+                        }
+                        const lShoulder = pl[11], lElbow = pl[13], lWrist = pl[15];
+                        if (lShoulder && lElbow && lWrist) {
+                            avatarScene.skeleton.lArm.rotation.z = Math.atan2(lElbow.y - lShoulder.y, lElbow.x - lShoulder.x) - Math.PI/2;
+                            avatarScene.skeleton.lElbow.rotation.z = Math.atan2(lWrist.y - lElbow.y, lWrist.x - lElbow.x) - Math.PI/2;
+                        }
                     }
                 }
                 // Left Hand: 21 landmarks [33..53]
@@ -114,7 +129,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const toggleHighStakes = document.getElementById("toggle-high-stakes");
 
     const btnToggleCamera = document.getElementById("btn-toggle-camera");
-    const btnTranslateCamera = document.getElementById("btn-translate-camera");
+    const btnMimicAvatar = document.getElementById("btn-mimic-avatar");
+    let isMimicModeActive = false;
     const btnSimSign = document.getElementById("btn-sim-sign");
     const btnSnapFrame = document.getElementById("btn-snap-frame");
     const cameraFeed = document.getElementById("camera-feed");
@@ -132,6 +148,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnSendToAvatar = document.getElementById("btn-send-to-avatar");
     const btnMicInput = document.getElementById("btn-mic-input");
     const avatarStatusTag = document.getElementById("avatar-status-tag");
+    const avatarSubtitleContainer = document.getElementById("avatar-subtitle-container");
+    const avatarSubtitleText = document.getElementById("avatar-subtitle-text");
     const messagesContainer = document.getElementById("messages-container");
 
     const auBarEyebrow = document.getElementById("au-bar-eyebrow");
@@ -154,7 +172,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const tabPanes = document.querySelectorAll(".tab-pane");
 
     navButtons.forEach(btn => {
-        btn.addEventListener("click", () => {
+        if (btn) btn.addEventListener("click", () => {
             navButtons.forEach(b => b.classList.remove("active"));
             tabPanes.forEach(p => p.classList.remove("active"));
 
@@ -193,7 +211,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    langSelect.addEventListener("change", (e) => {
+    if (langSelect) langSelect.addEventListener("change", (e) => {
         const newLang = e.target.value;
         store.update({ targetLanguage: newLang });
         const labels = { am: "Amharic (አማርኛ)", om: "Afaan Oromoo (Oromo)", en: "English (UK/US)" };
@@ -206,7 +224,7 @@ document.addEventListener("DOMContentLoaded", () => {
         updateDisplayedTranslation(currentItem);
     });
 
-    domainSelect.addEventListener("change", (e) => {
+    if (domainSelect) domainSelect.addEventListener("change", (e) => {
         const newDomain = e.target.value;
         store.update({ activeDomain: newDomain });
         sentenceIdx = 0;
@@ -216,27 +234,42 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    toggleHighStakes.addEventListener("change", (e) => {
-        store.update({ highStakesMode: e.target.checked });
-        const activeDomain = store.getState().activeDomain;
-        const domainMatches = demoSentences.filter(s => s.domain === activeDomain);
-        const currentItem = (domainMatches.length > 0) ? (domainMatches[sentenceIdx % domainMatches.length] || domainMatches[0]) : demoSentences[0];
-        if (e.target.checked && currentItem && currentItem.conf < 95.0) {
-            clarificationAlert.classList.remove("hidden");
-        } else {
-            clarificationAlert.classList.add("hidden");
-        }
-    });
+    if (toggleHighStakes) {
+        if (toggleHighStakes) toggleHighStakes.addEventListener("change", (e) => {
+            sdk.setHighStakesVerification(e.target.checked);
+            store.update({ highStakesMode: e.target.checked });
+            const activeDomain = store.getState().activeDomain;
+            const domainMatches = demoSentences.filter(s => s.domain === activeDomain);
+            const currentItem = (domainMatches.length > 0) ? (domainMatches[sentenceIdx % domainMatches.length] || domainMatches[0]) : demoSentences[0];
+            if (e.target.checked && currentItem && currentItem.conf < 95.0) {
+                clarificationAlert.classList.remove("hidden");
+            } else {
+                clarificationAlert.classList.add("hidden");
+            }
+        });
+    }
 
     // 5. Camera & MediaPipe Landmark Overlay
     let cameraActive = false;
     let cameraStream = null;
     let renderFrameId = null;
     let capturedFrameCount = 0;
+    let continuousCameraInterval = null;
     const cameraBadge = document.getElementById("camera-badge");
     let useRealTracking = false; // true when MediaPipe Holistic is processing real frames
 
-    btnToggleCamera.addEventListener("click", async () => {
+    if (btnMimicAvatar) {
+        if (btnMimicAvatar) btnMimicAvatar.addEventListener("click", () => {
+            isMimicModeActive = !isMimicModeActive;
+            btnMimicAvatar.style.background = isMimicModeActive ? "rgba(0, 229, 255, 0.25)" : "";
+            btnMimicAvatar.style.borderColor = isMimicModeActive ? "#00e5ff" : "";
+            if (isMimicModeActive && !cameraActive && btnToggleCamera) {
+                btnToggleCamera.click();
+            }
+        });
+    }
+
+    if (btnToggleCamera) btnToggleCamera.addEventListener("click", async () => {
         if (!cameraActive) {
             try {
                 cameraStream = await navigator.mediaDevices.getUserMedia({
@@ -247,8 +280,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 cameraFeed.style.display = "block";
                 cameraActive = true;
                 capturedFrameCount = 0;
-                btnToggleCamera.textContent = "Stop Camera";
+                btnToggleCamera.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><rect x="6" y="6" width="12" height="12" rx="2" ry="2"/></svg>Stop Translating`;
                 btnToggleCamera.classList.add("danger");
+
+                liveTranslatedText.textContent = "ካሜራው በርቷል፤ ምልክት ሲያሳዩ በቅጽበት ይተረጎማል...";
+                subTranslatedText.textContent = "Camera active. Show sign gestures in front of the camera...";
+                confidenceBadge.textContent = "Camera Active";
 
                 // Start MediaPipe Camera helper if Holistic is available
                 if (mpHolistic && typeof Camera !== "undefined") {
@@ -275,18 +312,44 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 }
                 startCanvasOverlayLoop();
+
+                // Start Continuous Real-Time Camera AI Translation Loop
+                if (continuousCameraInterval) clearInterval(continuousCameraInterval);
+                continuousCameraInterval = setInterval(async () => {
+                    if (cameraActive && liveCameraKeypointsHistory.length >= 3) {
+                        await performCameraNeuralTranslation();
+                    }
+                }, 650);
+
             } catch (err) {
                 console.warn("Webcam unavailable, using simulated landmark feed:", err);
                 cameraActive = true;
                 useRealTracking = false;
                 capturedFrameCount = 0;
-                btnToggleCamera.textContent = "Stop Camera (Sim)";
+                btnToggleCamera.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><rect x="6" y="6" width="12" height="12" rx="2" ry="2"/></svg>Stop Translating (Sim)`;
                 btnToggleCamera.classList.add("danger");
+                liveTranslatedText.textContent = "ካሜራው በርቷል፤ ምልክት ሲያሳዩ በቅጽበት ይተረጎማል...";
+                subTranslatedText.textContent = "Camera active. Show sign gestures in front of the camera...";
                 if (cameraBadge) { cameraBadge.style.display = "flex"; cameraBadge.querySelector(".tracking-dot").style.background = "#ffca28"; }
                 startCanvasOverlayLoop();
+
+                if (continuousCameraInterval) clearInterval(continuousCameraInterval);
+                continuousCameraInterval = setInterval(async () => {
+                    if (cameraActive && isSigningActive) {
+                        // Only translate if there has been recent hand motion
+                        if (Date.now() - lastHandMotionTime > 500) {
+                            await performCameraNeuralTranslation();
+                            isSigningActive = false; // Reset until they move hands again
+                        }
+                    }
+                }, 750);
             }
         } else {
-            // Stop camera and MediaPipe
+            // Stop camera, MediaPipe, and Continuous Translation Loop
+            if (continuousCameraInterval) {
+                clearInterval(continuousCameraInterval);
+                continuousCameraInterval = null;
+            }
             if (mpCamera) {
                 mpCamera.stop();
                 mpCamera = null;
@@ -302,11 +365,20 @@ document.addEventListener("DOMContentLoaded", () => {
             capturedFrameCount = 0;
             latestMPResults = null;
             realLandmarkBuffer = null;
-            btnToggleCamera.textContent = "Start Camera";
+            liveCameraKeypointsHistory.length = 0;
+
+            btnToggleCamera.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><polygon points="5 3 19 12 5 21 5 3"/></svg>Start Translating`;
             btnToggleCamera.classList.remove("danger");
             if (cameraBadge) { cameraBadge.style.display = "none"; }
             cancelAnimationFrame(renderFrameId);
             ctx.clearRect(0, 0, landmarkCanvas.width, landmarkCanvas.height);
+
+            // Update translation box to reflect stopped state
+            liveTranslatedText.textContent = "ካሜራው ጠፍቷል (ካሜራውን ሲከፍቱ በቅጽበት ይተረጎማል)";
+            subTranslatedText.textContent = "Camera is stopped. Click Start Translating to begin real-time translation.";
+            confidenceBadge.textContent = "Camera Off";
+            confidenceBadge.style.background = "rgba(255, 255, 255, 0.08)";
+            confidenceBadge.style.color = "#888888";
             
             // Reset Real-Time Action Unit HUD to baseline
             auBarEyebrow.style.width = "25%";
@@ -744,30 +816,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 clarificationAlert.classList.add("hidden");
             }
 
-            // Append to dialogue history
+            // Record message in store and transcript
             store.addMessage("deaf_signer", translatedText, lang, result.confidence_score);
             appendMessageToTranscript("deaf_signer", translatedText);
 
-            // Trigger avatar sign-back
-            if (avatarScene && typeof avatarScene.playGeneratedSigningStream === "function") {
-                avatarScene.playGeneratedSigningStream({
-                    prompt: translatedText,
-                    fps: 30,
-                    frames: Array(45).fill({
-                        blendshapes: {
-                            browInnerUp: 0.2,
-                            jawOpen: 0.15,
-                            mouthSmile: 0.1,
-                            headYaw: 0.0
-                        }
-                    })
-                }, () => {});
-            }
-
-            // Vocalize automatically if auto-vocalize is enabled
-            if (store.getState().autoVocalize) {
-                sdk.speakAloud(translatedText, lang);
-            }
+            // Avatar sign-back echo removed. The avatar should only respond to hearing user input, not echo the deaf user's own camera stream.
 
             return result;
         } catch (err) {
@@ -778,32 +831,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // Translate Camera Live Button
-    if (btnTranslateCamera) {
-        btnTranslateCamera.addEventListener("click", async () => {
-            if (!cameraActive) {
-                // If camera isn't active, start it
-                btnToggleCamera.click();
-                setTimeout(() => {
-                    performCameraNeuralTranslation();
-                }, 1000);
-                return;
-            }
-
-            btnTranslateCamera.disabled = true;
-            btnTranslateCamera.textContent = "Translating Camera…";
-            try {
-                await performCameraNeuralTranslation();
-            } finally {
-                btnTranslateCamera.disabled = false;
-                btnTranslateCamera.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><polygon points="5 3 19 12 5 21 5 3"/></svg>Translate Camera (AI)`;
-            }
-        });
-    }
-
     // Snap Frame Button
     if (btnSnapFrame) {
-        btnSnapFrame.addEventListener("click", async () => {
+        if (btnSnapFrame) btnSnapFrame.addEventListener("click", async () => {
             if (!cameraActive) {
                 btnToggleCamera.click();
                 return;
@@ -839,9 +869,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     confidenceBadge.textContent = `Camera AI Frame: ${Math.round(result.confidence_score * 100)}%`;
                     store.addMessage("deaf_signer", result.translated_text, lang, result.confidence_score);
                     appendMessageToTranscript("deaf_signer", result.translated_text);
-                    if (store.getState().autoVocalize) {
-                        sdk.speakAloud(result.translated_text, lang);
-                    }
                 } else {
                     await performCameraNeuralTranslation();
                 }
@@ -855,18 +882,8 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Automatic continuous camera gesture translation
-    setInterval(() => {
-        if (cameraActive && isSigningActive && Date.now() - lastHandMotionTime > 750) {
-            isSigningActive = false;
-            if (liveCameraKeypointsHistory.length >= 3) {
-                performCameraNeuralTranslation().catch(console.warn);
-            }
-        }
-    }, 800);
-
     // Simulate Signing Button (Executes live neural model inference)
-    btnSimSign.addEventListener("click", async () => {
+    if (btnSimSign) btnSimSign.addEventListener("click", async () => {
         if (isSimulating) return;
         isSimulating = true;
 
@@ -926,48 +943,145 @@ document.addEventListener("DOMContentLoaded", () => {
         );
     }
 
-    btnVocalize.addEventListener("click", handleVocalize);
+    if (btnVocalize) btnVocalize.addEventListener("click", handleVocalize);
 
-    // 8. Hearing Interlocutor: Speech-to-Text & Avatar Signing
-    btnSendToAvatar.addEventListener("click", () => {
-        const text = hearingTextInput.value.trim();
+    // ── Subtitle Display in Preferred Language ──────────────────────────────
+    let subtitleTimeout = null;
+    let lastSignedFinalText = "";
+
+    function showAvatarSubtitle(text, targetLang) {
+        if (!avatarSubtitleContainer || !avatarSubtitleText) return;
+        if (!text || !text.trim()) {
+            avatarSubtitleText.textContent = "ሰላምታዎችን ይፈርሙ (Ready to sign / ለመፈረም ዝግጁ)";
+            return;
+        }
+
+        const dictionary = [
+            {
+                keys: ["ጤና ይስጥልኝ", "ሰላምታ", "selam", "hello", "hi", "akkam", "fayyaa", "greetings"],
+                am: "ጤና ይስጥልኝ እንደምን ነዎት? ሰላም ነው?",
+                om: "Akkam jirtu? Fayyaan keessan akkam? Nagaa dhaa?",
+                en: "Hello, how are you? Is everything well?"
+            },
+            {
+                keys: ["ሰላም", "አመሰግናለሁ", "fine", "thank", "galatoomaa", "nagaa"],
+                am: "ሰላም ነኝ፣ አመሰግናለሁ! እንዴት ልርዳዎት?",
+                om: "Nagaa dha, galatoomaa! Akkamitti si gargaaruu danda'a?",
+                en: "I am fine, thank you! How can I help you?"
+            },
+            {
+                keys: ["መድኃኒት", "ምግብ", "ሀኪም", "medicine", "food", "qoricha", "nyaata", "prescription", "pill"],
+                am: "መድኃኒቱን ከምግብ በኋላ ይውሰዱ።",
+                om: "Qoricha kana erga nyaattanii booda fudhadhaa.",
+                en: "Take this medication after meals."
+            },
+            {
+                keys: ["አብራሩልኝ", "አብራራ", "ድጋሚ", "ጥያቄ", "explain", "clarify", "repeat", "ibsaa", "deebi'aa"],
+                am: "እባክዎን በድጋሚ በግልጽ ያብራሩልኝ?",
+                om: "Mee irra deebi'aa ifatti naaf ibsaa?",
+                en: "Could you please explain that again clearly?"
+            },
+            {
+                keys: ["ውድቅ", "ፍርድ", "ዳኛ", "ክስ", "dismissed", "court", "verdict", "kufaa", "murtii", "himata"],
+                am: "ክሱ ውድቅ ተደርጓል።",
+                om: "Himanni sun kufaa ta'eera.",
+                en: "The case has been dismissed."
+            },
+            {
+                keys: ["ባንክ", "ሂሳብ", "ገንዘብ", "bank", "account", "money", "baankii", "herrega"],
+                am: "የባንክ ሂሳብዎን ቁጥር እና መታወቂያዎን ያሳዩን።",
+                om: "Lakkoofsa herrega baankii fi waraqaa eenyummaa keessan agarsiisaa.",
+                en: "Please show your bank account number and identification card."
+            },
+            {
+                keys: ["ትምህርት", "ፈተና", "ክፍል", "education", "school", "exam", "barnoota", "qormaata"],
+                am: "የትምህርት ክፍለ ጊዜው ተጀምሯል። እባክዎን በትኩረት ይከታተሉ።",
+                om: "Kutaan barnootaa jalqabeera. Mee xiyyeeffannoon hordofaa.",
+                en: "The class session has started. Please pay close attention."
+            }
+        ];
+
+        const activeLang = targetLang || (store ? store.getState().targetLanguage : "am");
+        let displayText = text.trim();
+        let lowerText = displayText.toLowerCase();
+
+        for (const entry of dictionary) {
+            if (entry.keys.some(k => lowerText.includes(k.toLowerCase()))) {
+                displayText = entry[activeLang] || entry.am || displayText;
+                break;
+            }
+        }
+
+        avatarSubtitleText.textContent = displayText;
+        avatarSubtitleContainer.classList.add("active");
+        avatarSubtitleContainer.classList.add("speaking");
+
+        if (subtitleTimeout) clearTimeout(subtitleTimeout);
+        subtitleTimeout = setTimeout(() => {
+            if (avatarSubtitleContainer && !isVoiceListening) {
+                avatarSubtitleContainer.classList.remove("speaking");
+            }
+        }, 8000);
+    }
+
+    // ── 8. Hearing Interlocutor: Text Input & Avatar Signing ──────────────────
+    let isVoiceListening = false;
+    let voiceRecognizer = null;
+
+    function handleSendToAvatar(overrideText) {
+        const text = (overrideText !== undefined ? overrideText : (hearingTextInput ? hearingTextInput.value : "")).trim();
         if (!text) return;
 
-        avatarStatusTag.textContent = "Synthesizing Continuous Signs...";
-        avatarStatusTag.style.color = "#00e5ff";
+        const currentLang = store ? store.getState().targetLanguage : "am";
 
-        sdk.produceAvatarAnimation(text, "am", 1.0)
-            .then(productionData => {
-                if (avatarScene) {
-                    avatarScene.playGeneratedSigningStream(productionData, () => {
-                        avatarStatusTag.textContent = "Ready for Input";
-                        avatarStatusTag.style.color = "#ffffff";
-                    });
-                }
-            })
-            .catch(err => {
-                console.warn("Backend produce API call note:", err);
-                if (avatarScene) {
-                    avatarScene.playGeneratedSigningStream({
-                        fps: 30,
-                        frames: Array(60).fill({
-                            blendshapes: { browInnerUp: 0.3, jawOpen: 0.2, mouthSmile: 0.2, headYaw: 0.0 }
-                        })
-                    }, () => {
-                        avatarStatusTag.textContent = "Ready for Input";
-                    });
+        // Display subtitle under avatar in preferred language
+        showAvatarSubtitle(text, currentLang);
+
+        if (avatarStatusTag) {
+            avatarStatusTag.textContent = "Synthesizing Signs...";
+            avatarStatusTag.style.color = "#00e5ff";
+        }
+
+        if (overrideText === undefined && hearingTextInput) {
+            // Keep value or preserve for reference
+        }
+
+        // Add to dialogue transcript
+        appendMessageToTranscript("hearing", text);
+        if (store) store.addMessage("hearing_user", text, currentLang);
+
+        // Animate 3D Digital Avatar
+        if (avatarScene) {
+            avatarScene.playGeneratedSigningStream({ prompt: text, text: text }, () => {
+                if (avatarStatusTag) {
+                    avatarStatusTag.textContent = isVoiceListening ? "Listening to voice..." : "Ready for Input";
+                    avatarStatusTag.style.color = isVoiceListening ? "#ef4444" : "#ffffff";
                 }
             });
+        }
+    }
 
-        store.addMessage("hearing_user", text, "am");
-        appendMessageToTranscript("hearing_user", text);
-    });
+    if (btnSendToAvatar) {
+        if (btnSendToAvatar) btnSendToAvatar.addEventListener("click", () => {
+            handleSendToAvatar();
+        });
+    }
+
+    if (hearingTextInput) {
+        if (hearingTextInput) hearingTextInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSendToAvatar();
+            }
+        });
+    }
 
     // Preset Chips
     document.querySelectorAll(".reply-chip").forEach(chip => {
-        chip.addEventListener("click", () => {
-            hearingTextInput.value = chip.dataset.text;
-            btnSendToAvatar.click();
+        if (chip) chip.addEventListener("click", () => {
+            const chipText = chip.dataset.text || chip.textContent;
+            if (hearingTextInput) hearingTextInput.value = chipText;
+            handleSendToAvatar(chipText);
         });
     });
 
@@ -977,7 +1091,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnReplayAvatar = document.getElementById("btn-replay-avatar");
 
     if (avatarSpeedSelect) {
-        avatarSpeedSelect.addEventListener("change", (e) => {
+        if (avatarSpeedSelect) avatarSpeedSelect.addEventListener("change", (e) => {
             if (avatarScene) {
                 avatarScene.setSpeed(parseFloat(e.target.value));
             }
@@ -985,7 +1099,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (btnMirrorAvatar) {
-        btnMirrorAvatar.addEventListener("click", () => {
+        if (btnMirrorAvatar) btnMirrorAvatar.addEventListener("click", () => {
             if (avatarScene) {
                 const isMirrored = avatarScene.toggleMirrorMode();
                 btnMirrorAvatar.style.background = isMirrored ? "rgba(0, 229, 255, 0.25)" : "";
@@ -995,34 +1109,188 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (btnReplayAvatar) {
-        btnReplayAvatar.addEventListener("click", () => {
-            btnSendToAvatar.click();
+        if (btnReplayAvatar) btnReplayAvatar.addEventListener("click", () => {
+            const currentSub = avatarSubtitleText ? avatarSubtitleText.textContent : "";
+            const textToReplay = (hearingTextInput && hearingTextInput.value.trim()) || currentSub || "ሰላም";
+            handleSendToAvatar(textToReplay);
         });
     }
 
-    // Speech Recognition (Web Speech API)
+    // ── Voice Input (Toggle Microphone & Real-Time Live Avatar Signing) ───────
     if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
         const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-        const recognizer = new SpeechRec();
-        recognizer.continuous = false;
-        recognizer.interimResults = false;
-        recognizer.lang = "am-ET";
+        voiceRecognizer = new SpeechRec();
+        voiceRecognizer.continuous = true;
+        voiceRecognizer.interimResults = true;
 
-        recognizer.onresult = (event) => {
-            const transcript = event.results[0][0].transcript;
-            hearingTextInput.value = transcript;
-            btnMicInput.style.borderColor = "";
-            btnSendToAvatar.click();
+        const getRecognitionLang = () => {
+            const curLang = store ? store.getState().targetLanguage : "am";
+            if (curLang === "om") return "om-ET";
+            if (curLang === "en") return "en-US";
+            return "am-ET";
         };
 
-        recognizer.onerror = () => {
-            btnMicInput.style.borderColor = "";
+        voiceRecognizer.lang = getRecognitionLang();
+
+        if (langSelect) {
+            if (langSelect) langSelect.addEventListener("change", () => {
+                if (voiceRecognizer) {
+                    voiceRecognizer.lang = getRecognitionLang();
+                }
+            });
+        }
+
+        let liveSignDebounce = null;
+
+        voiceRecognizer.onresult = (event) => {
+            let interimTranscript = "";
+            let finalTranscript = "";
+
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    finalTranscript += event.results[i][0].transcript;
+                } else {
+                    interimTranscript += event.results[i][0].transcript;
+                }
+            }
+
+            const currentTranscript = (finalTranscript || interimTranscript).trim();
+            if (!currentTranscript) return;
+
+            // Live update the text input box
+            if (hearingTextInput) {
+                hearingTextInput.value = currentTranscript;
+            }
+
+            const currentLang = store ? store.getState().targetLanguage : "am";
+            // Show real-time subtitle under the avatar
+            showAvatarSubtitle(currentTranscript, currentLang);
+
+            // Smooth kinematics: trigger avatar on finalized phrase chunks or stabilized speech pause
+            const cleanFinal = finalTranscript.trim();
+            if (cleanFinal && cleanFinal !== lastSignedFinalText) {
+                lastSignedFinalText = cleanFinal;
+                if (avatarScene) {
+                    avatarScene.playGeneratedSigningStream({ prompt: cleanFinal, text: cleanFinal }, () => {
+                        if (avatarStatusTag) {
+                            avatarStatusTag.textContent = isVoiceListening ? "Listening to voice..." : "Ready for Input";
+                            avatarStatusTag.style.color = isVoiceListening ? "#ef4444" : "#ffffff";
+                        }
+                    });
+                }
+                appendMessageToTranscript("hearing", cleanFinal);
+                if (store) store.addMessage("hearing_user", cleanFinal, currentLang);
+            } else if (!cleanFinal && interimTranscript.trim()) {
+                // Debounce interim trigger if user pauses speaking
+                if (liveSignDebounce) clearTimeout(liveSignDebounce);
+                liveSignDebounce = setTimeout(() => {
+                    const pausedInterim = interimTranscript.trim();
+                    if (pausedInterim && pausedInterim !== lastSignedFinalText && pausedInterim.length >= 3) {
+                        lastSignedFinalText = pausedInterim;
+                        if (avatarScene) {
+                            avatarScene.playGeneratedSigningStream({ prompt: pausedInterim, text: pausedInterim }, () => {
+                                if (avatarStatusTag) {
+                                    avatarStatusTag.textContent = isVoiceListening ? "Listening to voice..." : "Ready for Input";
+                                    avatarStatusTag.style.color = isVoiceListening ? "#ef4444" : "#ffffff";
+                                }
+                            });
+                        }
+                    }
+                }, 500);
+            }
         };
 
-        btnMicInput.addEventListener("click", () => {
-            btnMicInput.style.borderColor = "#00e676";
-            try { recognizer.start(); } catch (e) {}
-        });
+        voiceRecognizer.onerror = (e) => {
+            console.warn("Speech Recognition notice/error:", e.error);
+            if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+                isVoiceListening = false;
+                if (btnMicInput) {
+                    btnMicInput.classList.remove("active");
+                    btnMicInput.style.borderColor = "";
+                }
+                if (avatarSubtitleContainer) {
+                    avatarSubtitleContainer.classList.remove("listening");
+                }
+                alert("Microphone permission was denied. Please allow microphone access in your browser settings.");
+            }
+        };
+
+        voiceRecognizer.onend = () => {
+            if (isVoiceListening && voiceRecognizer) {
+                try {
+                    voiceRecognizer.start();
+                } catch (err) {
+                    // Already running
+                }
+            } else {
+                isVoiceListening = false;
+                if (btnMicInput) {
+                    btnMicInput.classList.remove("active");
+                    btnMicInput.style.borderColor = "";
+                }
+                if (avatarSubtitleContainer) {
+                    avatarSubtitleContainer.classList.remove("listening");
+                }
+                if (avatarStatusTag) {
+                    avatarStatusTag.textContent = "Ready for Input";
+                    avatarStatusTag.style.color = "#ffffff";
+                }
+            }
+        };
+
+        if (btnMicInput) {
+            if (btnMicInput) btnMicInput.addEventListener("click", () => {
+                if (!isVoiceListening) {
+                    // TOGGLE ON: START CONTINUOUS LISTENING
+                    try {
+                        voiceRecognizer.lang = getRecognitionLang();
+                        voiceRecognizer.start();
+                        isVoiceListening = true;
+                        btnMicInput.classList.add("active");
+                        btnMicInput.style.borderColor = "#ef4444";
+                        btnMicInput.title = "Recording voice... Click to Stop";
+                        if (avatarSubtitleContainer) {
+                            avatarSubtitleContainer.classList.add("listening");
+                        }
+                        if (avatarStatusTag) {
+                            avatarStatusTag.textContent = "Listening to voice...";
+                            avatarStatusTag.style.color = "#ef4444";
+                        }
+                        showAvatarSubtitle("🎤 ድምጽዎን እየሰማ ነው... (Listening...)", store ? store.getState().targetLanguage : "am");
+                    } catch (e) {
+                        console.error("Could not start speech recognition:", e);
+                        isVoiceListening = false;
+                        btnMicInput.classList.remove("active");
+                        btnMicInput.style.borderColor = "";
+                        if (avatarSubtitleContainer) {
+                            avatarSubtitleContainer.classList.remove("listening");
+                        }
+                    }
+                } else {
+                    // TOGGLE OFF: STOP LISTENING
+                    isVoiceListening = false;
+                    try {
+                        voiceRecognizer.stop();
+                    } catch (e) {}
+                    btnMicInput.classList.remove("active");
+                    btnMicInput.style.borderColor = "";
+                    btnMicInput.title = "Click to start continuous voice input";
+                    if (avatarSubtitleContainer) {
+                        avatarSubtitleContainer.classList.remove("listening");
+                    }
+                    if (avatarStatusTag) {
+                        avatarStatusTag.textContent = "Ready for Input";
+                        avatarStatusTag.style.color = "#ffffff";
+                    }
+                }
+            });
+        }
+    } else {
+        if (btnMicInput) {
+            if (btnMicInput) btnMicInput.addEventListener("click", () => {
+                alert("Voice recognition is not supported in this browser. Please use Chrome, Edge, or a Web Speech-compatible browser.");
+            });
+        }
     }
 
     function appendMessageToTranscript(sender, text) {
@@ -1059,13 +1327,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let exemplarBuffer = [];
 
-    btnRecordExemplar.addEventListener("click", () => {
+    if (btnRecordExemplar) btnRecordExemplar.addEventListener("click", () => {
         exemplarBuffer.push([[0.1, 0.2, 0.3]]);
         enrollStatusEl.textContent = `[Captured ${exemplarBuffer.length}/3 shots] Intra-cluster variance: ${(0.03 * exemplarBuffer.length).toFixed(3)}`;
         enrollStatusEl.style.color = "#00e5ff";
     });
 
-    btnSaveEnrollment.addEventListener("click", () => {
+    if (btnSaveEnrollment) btnSaveEnrollment.addEventListener("click", () => {
         const signName = enrollSignNameInput.value.trim();
         if (!signName) return;
 
@@ -1125,7 +1393,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    btnSimEMG.addEventListener("click", () => {
+    if (btnSimEMG) btnSimEMG.addEventListener("click", () => {
         drawSimulatedEMG();
         emgDecodedResult.textContent = "Decoding sEMG Subvocalization...";
 
@@ -1142,7 +1410,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     document.querySelectorAll(".wrist-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
+        if (btn) btn.addEventListener("click", () => {
             const cmd = btn.dataset.cmd;
             const statusEl = document.getElementById("wearable-status");
             statusEl.textContent = `BLE Packet Sent: CMD_${cmd} [ACK: 0x00]`;
@@ -1156,7 +1424,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const govSignerInput = document.getElementById("gov-signer-id");
     const govStatusEl = document.getElementById("gov-status");
 
-    btnVerifyConsent.addEventListener("click", async () => {
+    if (btnVerifyConsent) btnVerifyConsent.addEventListener("click", async () => {
         const signerId = govSignerInput.value.trim();
         try {
             const resp = await fetch(`${window.location.origin}/api/v1/governance/consent/verify`, {
@@ -1178,7 +1446,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    btnWithdrawConsent.addEventListener("click", async () => {
+    if (btnWithdrawConsent) btnWithdrawConsent.addEventListener("click", async () => {
         const signerId = govSignerInput.value.trim();
         try {
             const resp = await fetch(`${window.location.origin}/api/v1/governance/consent/withdraw`, {
@@ -1196,9 +1464,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // 12. Direct Frame Landmark Snapshot (Snap Frame)
-    const btnSnapFrame = document.getElementById("btn-snap-frame");
     if (btnSnapFrame) {
-        btnSnapFrame.addEventListener("click", async () => {
+        if (btnSnapFrame) btnSnapFrame.addEventListener("click", async () => {
             // Prevent double-clicks
             if (btnSnapFrame.disabled) return;
             btnSnapFrame.disabled = true;
@@ -1331,17 +1598,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (btnRefreshLeaderboard) {
-        btnRefreshLeaderboard.addEventListener("click", loadLeaderboard);
+        if (btnRefreshLeaderboard) btnRefreshLeaderboard.addEventListener("click", loadLeaderboard);
     }
 
     document.querySelectorAll(".nav-btn").forEach(btn => {
         if (btn.dataset.tab === "leaderboard") {
-            btn.addEventListener("click", loadLeaderboard);
+            if (btn) btn.addEventListener("click", loadLeaderboard);
         }
     });
 
     if (leaderboardForm) {
-        leaderboardForm.addEventListener("submit", async (e) => {
+        if (leaderboardForm) leaderboardForm.addEventListener("submit", async (e) => {
             e.preventDefault();
             subStatusEl.textContent = "Submitting benchmark evaluation...";
             subStatusEl.style.color = "#00e5ff";
@@ -1401,7 +1668,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Toggle Portal Dropdown
     if (userBadge && portalDropdown) {
-        userBadge.addEventListener("click", (e) => {
+        if (userBadge) userBadge.addEventListener("click", (e) => {
             e.stopPropagation();
             const isClosed = portalDropdown.classList.contains("hidden");
             portalDropdown.classList.toggle("hidden", !isClosed);
@@ -1410,7 +1677,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Close Dropdown when clicking outside
-    document.addEventListener("click", (e) => {
+    if (document) document.addEventListener("click", (e) => {
         if (portalMenuWrapper && !portalMenuWrapper.contains(e.target)) {
             if (portalDropdown) portalDropdown.classList.add("hidden");
             portalMenuWrapper.classList.remove("open");
@@ -1420,7 +1687,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Dropdown Items: Close dropdown when clicked
     if (portalDropdown) {
         portalDropdown.querySelectorAll(".dropdown-item.nav-btn").forEach(item => {
-            item.addEventListener("click", () => {
+            if (item) item.addEventListener("click", () => {
                 portalDropdown.classList.add("hidden");
                 if (portalMenuWrapper) portalMenuWrapper.classList.remove("open");
             });
@@ -1429,7 +1696,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Open Auth Modal from Dropdown
     if (btnPortalAuth) {
-        btnPortalAuth.addEventListener("click", () => {
+        if (btnPortalAuth) btnPortalAuth.addEventListener("click", () => {
             if (portalDropdown) portalDropdown.classList.add("hidden");
             if (portalMenuWrapper) portalMenuWrapper.classList.remove("open");
             authModal.classList.remove("hidden");
@@ -1437,13 +1704,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (btnCloseAuth) {
-        btnCloseAuth.addEventListener("click", () => {
+        if (btnCloseAuth) btnCloseAuth.addEventListener("click", () => {
             authModal.classList.add("hidden");
         });
     }
 
     if (tabAuthLogin && tabAuthRegister) {
-        tabAuthLogin.addEventListener("click", () => {
+        if (tabAuthLogin) tabAuthLogin.addEventListener("click", () => {
             tabAuthLogin.classList.add("active");
             tabAuthRegister.classList.remove("active");
             formAuthLogin.classList.remove("hidden");
@@ -1451,7 +1718,7 @@ document.addEventListener("DOMContentLoaded", () => {
             authStatusEl.textContent = "";
         });
 
-        tabAuthRegister.addEventListener("click", () => {
+        if (tabAuthRegister) tabAuthRegister.addEventListener("click", () => {
             tabAuthRegister.classList.add("active");
             tabAuthLogin.classList.remove("active");
             formAuthRegister.classList.remove("hidden");
@@ -1461,7 +1728,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (formAuthLogin) {
-        formAuthLogin.addEventListener("submit", async (e) => {
+        if (formAuthLogin) formAuthLogin.addEventListener("submit", async (e) => {
             e.preventDefault();
             authStatusEl.textContent = "Signing in...";
             authStatusEl.style.color = "#00e5ff";
@@ -1491,7 +1758,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (formAuthRegister) {
-        formAuthRegister.addEventListener("submit", async (e) => {
+        if (formAuthRegister) formAuthRegister.addEventListener("submit", async (e) => {
             e.preventDefault();
             authStatusEl.textContent = "Creating profile...";
             authStatusEl.style.color = "#00e5ff";

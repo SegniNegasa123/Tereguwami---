@@ -119,7 +119,14 @@ async def get_product_app():
             content = content.replace('src="app.js"', f'src="/client/app.js?v={int(time.time())}"')
             content = content.replace('src="../shared-components/tereguwami_sdk.js"', f'src="/shared-components/tereguwami_sdk.js?v={int(time.time())}"')
             content = content.replace('src="../shared-components/state_store.js"', f'src="/shared-components/state_store.js?v={int(time.time())}"')
-            return HTMLResponse(content=content)
+            return HTMLResponse(
+                content=content,
+                headers={
+                    "Cache-Control": "no-cache, no-store, must-revalidate",
+                    "Pragma": "no-cache",
+                    "Expires": "0"
+                }
+            )
     return HTMLResponse(content="<h1>Product app not found</h1>", status_code=404)
 
 
